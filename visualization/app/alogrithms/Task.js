@@ -7,7 +7,7 @@ class Task {
     transientFaultProbality
     constructor() {
         this.id = idcount++
-        this.duration = Math.random() * 1;
+        this.duration = Math.random() * 2;
         this.transientFaultProbality = calProbability(this.duration)
         // console.log(this.transientFaultProbality)
     }

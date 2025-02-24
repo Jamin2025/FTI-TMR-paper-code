@@ -5,6 +5,7 @@ const coreNums = 4
 class Core {
     isPermentFault = false;
     isCalculate = false;
+    calCount = 0
 
     curCalculate = Promise.resolve();
 
@@ -13,6 +14,7 @@ class Core {
     }
 
     calculate(task) {
+        this.calCount++;
         this.isCalculate = true;
         this.curCalculate = new Promise((resolve) => {
             setTimeout(() => {
