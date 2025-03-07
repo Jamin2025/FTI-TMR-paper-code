@@ -5,11 +5,11 @@ function StgToJson(file) {
     file,
     'utf-8'
   ).then((data) => {
-    const arr = data.split('\n').map(str => {
+      const arr = data.split('\n').map(str => {
           return str.split(/\s+/g)
       })
-
-      const taskGraph = new Array(Number(arr[0][1]) + 1).fill(0).map(() => [])
+      const nodeNum = Number(arr[0][1]) + 1
+      const taskGraph = new Array(nodeNum).fill(null)
       const len = arr.length;
       for (let i = 1; i < len; i++) {
           const item = arr[i];
@@ -25,51 +25,49 @@ function StgToJson(file) {
       const duration = Number(item [2])
       const predecessornums = item[3]
       const predecessors = item.slice(4)
-      predecessors.forEach((predecessor) => {
-          taskGraph[predecessor].push({id, duration})
-      })
+      taskGraph[id]={duration, complete: false, predecessors, predecessornums}
       const jsonData = JSON.stringify(taskGraph)
       fs.writeFile(file.replace("stg", "json"), jsonData)
   }
 }
 
-StgToJson("./dataset/fpppp.stg")
-StgToJson("./dataset/robot.stg")
-StgToJson("./dataset/sparse.stg")
+// StgToJson("./dataset/fpppp.stg")
+// StgToJson("./dataset/robot.stg")
+// StgToJson("./dataset/sparse.stg")
 
+const taskGraph = JSON.parse(require('./dataset/fpppp.json'))
+// 构建任务图的邻接表表示
 
+// LJF调度算法
+const LJFSchedule = () => {
+  const readyQueue = []; // 初始化空的就绪队列
 
-function scheduleLJF(graph) {
-    const tasks = [];
-    const scheduled = new Array(graph.length).fill(false);
-  
-    // 将任务添加到任务列表中
-    for (let i = 0; i < graph.length; i++) {
-      for (let j = 0; j < graph[i].length; j++) {
-        const task = graph[i][j];
-        tasks.push(task);
+  while (true) {
+      // 将没有前驱任务或前驱任务都已完成的任务加入就绪队列
+      for (const taskId in taskGraph) {
+          const task = taskGraph[taskId];
+          if (task.predecessors.every(id => taskGraph[id].complete)) {
+              readyQueue.push(task);
+              taskGraph[id].complete = true;
+          }
       }
-    }
-  
-    // 按照任务长度排序
-    tasks.sort((a, b) => b.duration - a.duration);
-  
-    // 调度任务
-    const schedule = [];
-    for (let i = 0; i < tasks.length; i++) {
-      const task = tasks[i];
-      const node = task.id;
-      if (!scheduled[node]) {
-        scheduled[node] = true;
-        schedule.push(node);
-      }
-    }
-  
-    return schedule;
-}
 
-/**
- * 
- * ```javascript
- * ```
- */
+      if (readyQueue.length === 0) {
+          break; // 所有任务都已完成
+      }
+
+      // 选择剩余执行时间最长的任务作为当前任务
+      readyQueue.sort((a, b) => b.duration - a.duration);
+      const currentTask = readyQueue.shift();
+
+      // 执行当前任务直到完成，并更新其剩余执行时间
+      console.log(`执行任务 ${currentTask.id}`);
+
+      // 更新任务状态，检查依赖关系，将新可执行任务加入就绪队列
+      for (const taskId in taskGraph) {
+          const task = taskGraph[taskId];
+          task.predecessors = task.predecessors.filter(id => id !== currentTask.id);
+      }
+  }
+};
+

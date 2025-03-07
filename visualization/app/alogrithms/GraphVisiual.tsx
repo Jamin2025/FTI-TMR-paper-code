@@ -1,9 +1,9 @@
 "use client"
 import {useRef, useEffect} from "react"
-
+import {Graph} from "./util/graphType"
 import robotGraph from "./dataset/robot.json"
 
-const GraphVisiualization = ({graphData}: {graphData?: any}) => {
+const GraphVisiualization = ({graphData}: {graphData?: Graph}) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {

@@ -1,4 +1,15 @@
 const { coreNums, Core } = require('./Core')
+const { 
+    setExperimentStateForTMR,
+    
+    setExperimentStateForTwoPhaseTMR,
+
+    setExperimentStateForReactiveTMR,
+    deactiveCoresForReactiveTMR,
+    activeCoresForReactiveTMR,
+
+    setExperimentStateForClusterTMR
+} = require("../util")
 class Node {
     cores = new Array(coreNums)
     
@@ -13,6 +24,9 @@ class Node {
     flagArr = [[], [], [], []]
     // stores the history of faults (again, either transient or permanent) that have occurred in the prior frames.
     historyArr = [[], [], [], []]
+
+    // 争议任务，用于cluster比较
+    conflictTasks = new Set()
 
     // 产生错误的任务列表，保存用于检测是否永久性错误
     sideTasks = [new Set(), new Set(), new Set(), new Set()]
@@ -30,21 +44,38 @@ class Node {
     brokeCore(id) {
         this.cores[id].broke()
     }
-    constructor() {
+
+    NodeID = null
+
+    // mode 0 TMR, 1 TwoPhase TMR, 2 ReactiveTMR, 3 DashBoard
+    constructor(mode, id) {
         const { cores } = this
-        for (let i = 0; i < coreNums; i++) {
-            cores[i] = new Core()
+        
+        if (typeof id == "number") {
+            this.NodeID = id
+            for (let i = 0; i < coreNums; i++) {
+                cores[i] = new Core(i, mode, id)
+            }
+        } else {
+            for (let i = 0; i < coreNums; i++) {
+                cores[i] = new Core(i, mode)
+            }
         }
+        
     }
 
     deactiveCore(core) {
         this.brokenCores.add(core)
+        deactiveCoresForReactiveTMR(core)
+        this.cores[core].deactiveCore()
     }
 
     activeCore(core) {
         const success = this.brokenCores.delete(core)
         if (!success) throw new Error("activeCore error: " + core)
-        else console.log("active core: ", core)
+        activeCoresForReactiveTMR(core)
+        this.cores[core].active()
+        console.log("active core: ", core)
     }
 
     addInSideTasks(taskID, core, round) {
@@ -61,40 +92,29 @@ class Node {
         return this.sideTasks[core].size
     }
 
-    async TMR(task) {
-        const {calArr} = await this.runOnDistinctFreeCores(3, null, task)
-        const result = await Promise.all(calArr)
-        try {
-            return FT.TMR(...result)
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
 
     async runOnDistinctFreeCores(num, exclude, task) {
         let i = 0
         const hasExclude = exclude instanceof Set
         if (hasExclude && exclude.size === 4) throw new Error("runOnDistinctFreeCores error");
         if (hasExclude && coreNums - exclude.size < num) return Promise.reject("no more distinct core")
-        const freeCoresAndCalArr = new Promise(async (resolve, reject) => {
+        const freeCoresAndCalArr = await new Promise(async (resolve, reject) => {
             let freeCores = []
-            let calArr = []
+            let callArr = []
             const searchs = []
             for (let j = 0; j < 4; j++) {
                 // 排除掉的内核
-                if (hasExclude) {
-                    if (exclude.has(j)) continue
-                }
+                if (hasExclude && exclude.has(j)) continue
                 searchs.push(this.cores[j].curCalculate.then(() => {
                     if (i < num) {
                         ++i
-                        calArr.push(this.cores[j].calculate(task))
+                        callArr.push(this.cores[j].calculate(task))
                         freeCores.push(j)
-                        if (i === num) resolve({ freeCores, calArr })
+                        if (i === num) resolve({ freeCores, callArr })
                     }
                     return null
-                }))
+                })
+            )
             }
             Promise.all(searchs).then(() => {
                 if (i < num) reject("no more distinct core")
@@ -103,44 +123,20 @@ class Node {
         return freeCoresAndCalArr
     }
 
-    async calculateWithOutBrokenCore(task) {
+    async runWithOutBrokenCore(task) {
         if (this.brokenCores.size === coreNums) throw new Error("no more regular cores to used");
-        let a = new Promise((resolve) => {
+        return new Promise((resolve) => {
             let isCalculated = false
             for (let i = 0; i < 4; i++) {
-                if (this.brokenCores.has(i)) {
-                    continue;
+                if (!this.brokenCores.has(i)) {   
+                    this.cores[i].curCalculate.then(() => {
+                        if (isCalculated) return null
+                        isCalculated = true
+                        resolve([this.cores[i].calculate(task)])
+                    })
                 }
-                this.cores[i].curCalculate.then(() => {
-                    if (isCalculated) return null
-                    isCalculated = true
-                    resolve(this.cores[i].calculate(task))
-                })
             }
         })
-        return a
-    }
-
-    async TwoPhaseTMR(task) {
-        // todo
-         // 在任意两个内核上进行计算
-        const result = await Promise.all([
-            this.calculateWithOutBrokenCore(task),
-            this.calculateWithOutBrokenCore(task)
-        ])
-        const primaryRes = FT.TPTMR_Primary(...result)
-        // 双阶段多模冗余按需阶段
-        if (primaryRes == "TPTMPnoPass") {
-            try {
-                const c = await this.calculateWithOutBrokenCore(task)
-                return FT.TMR(...result, c)
-            } catch (error) {
-                console.log(error)
-            }
-        // 主阶段通过
-        } else {
-            return result[0]
-        }
     }
     // 只能检测单内核永久性错误
     async ReactiveTMR(task, params) {
@@ -149,10 +145,10 @@ class Node {
          *@todo 直接计算，防止多次在同个内核组上计算 
          */
        
-        const {two_FreeCores, calArr, noMoreCore} = params
-        if (noMoreCore) return this.TwoPhaseTMR(task)
+        const {two_FreeCores, callArr, noMoreCore} = params
+        if (noMoreCore) return this.runWithTwoPhaseTMR(task)
         // 在该两个内核上进行计算
-        const result = await Promise.all(calArr)
+        const result = await Promise.all(callArr)
         const primaryRes = FT.TPTMR_Primary(...result)
         // 双阶段多模冗余按需阶段
         if (primaryRes == "TPTMPnoPass") {
@@ -163,30 +159,62 @@ class Node {
              */
             if (this.brokenCores.size < 2) {
                 const excludeCore =  new Set([...two_FreeCores, ...this.brokenCores])
-                const {freeCores: lastCore, calArr: lastCallRes} = await this.runOnDistinctFreeCores(1, excludeCore, task)
+                const {freeCores: lastCore, callArr: lastCallRes} = await this.runOnDistinctFreeCores(1, excludeCore, task)
                 // 重新计算一次
                 const c = await lastCallRes[0]
                 const fullcalCores = [...two_FreeCores, ...lastCore]
                 console.log("fullCalCores: ", fullcalCores)
-                const twfc = FT.TMR_with_fault_core(...result, c, fullcalCores)
+                const [finalRes, faultCore] = FT.TMR_with_fault_core(...result, c, fullcalCores)
                 // 更新错误结果历史记录, faultcore错误
-                const faultCore = twfc[1]
-                const { flagArr } = this
-                flagArr[faultCore][task.id] = 1
-                return twfc[0]
+                if (faultCore !== null) {
+                    const { flagArr } = this
+                    flagArr[faultCore][task.id] = 1
+                }
+                setExperimentStateForReactiveTMR((prevState) => {
+                    const newState = [...prevState]
+                    newState[0] += 1
+                    newState[1] += 3
+                    if (finalRes !== 0.5) newState[3] += 1
+                    else newState[2] += 1
+                    newState[4] = newState[3] / newState[0]
+                    return newState
+                }) 
+                return finalRes
             } else {
-                // only two phase
+                // only two phase，没多余的内核使用了
+                let c = null
                 try {
-                    const c = await this.calculateWithOutBrokenCore(task)
-                    return FT.TMR(...result, c)
+                    
+                    [c] = await this.runWithOutBrokenCore(task)
+                    const finalRes =  FT.TMR(...result, await c)
+                    setExperimentStateForReactiveTMR((prevState) => {
+                        const newState = [...prevState]
+                        newState[0] += 1
+                        newState[1] += 3
+                        if (finalRes !== 0.5) newState[3] += 1
+                        else newState[2] += 1
+                        newState[4] = newState[3] / newState[0]
+                        return newState
+                    })
+                    return finalRes
                 } catch (error) {
-                    console.log(error)
+                    console.error(error, result, c)
                 }
             }
         // 主阶段通过
         } else {
+            const finalRes = result[0]
+            setExperimentStateForReactiveTMR((prevState) => {
+                const newState = [...prevState]
+                newState[0] += 1
+                newState[1] += 2
+                if (finalRes !== 0.5) newState[3] += 1
+                else newState[2] += 1
+                newState[4] = newState[3] / newState[0]
+                return newState
+            })
             console.log("fullCalCores: ", two_FreeCores)
-            return result[0]
+            return finalRes
         }
     }
 
@@ -249,20 +277,158 @@ class Node {
 
     async runWithTMR(App) {
         const res = []
-        for(let i = 0; i < App.length; i++) {
+        const AppLen = App.length
+        for(let i = 0; i < AppLen; i++) {
             let task = App[i]
-            res.push(this.calTask(task, 0))
+            const { callArr: waitVotintThreeRes} = await this.runOnDistinctFreeCores(3, null, task)
+            // const waitVotintThreeRes = await this.calTask(task, 0);
+            // 投票异步防止阻塞
+            res.push(Promise.all(waitVotintThreeRes).then(res => {
+                const votRes = FT.TMR(...res);
+                setExperimentStateForTMR((prev) => {
+                    const news = [...prev]
+                    news[1] += 3
+                    if (votRes !== 0.5) news[3] += 1
+                    else news[2] += 1
+                    news[4] = news[3] / AppLen 
+                    return news
+                })
+                return votRes
+            }))
         }
-        return Promise.all(res)
+        const finalRes = await Promise.all(res)
+        return finalRes
     }
 
     async runWithTwoPhaseTMR(App) {
         const res = []
-        for(let i = 0; i < App.length; i++) {
+        const AppLen = App.length;
+        for(let i = 0; i < AppLen; i++) {
             let task = App[i]
-            res.push(this.calTask(task, 1))
+            const [ a ] = await this.runWithOutBrokenCore(task)
+            const [ b ] = await this.runWithOutBrokenCore(task)
+            // 投票异步防止阻塞
+            const finalPromise = Promise.all([a, b]).then(async (result) => {
+                const primaryRes = FT.TPTMR_Primary(...result)
+                if (primaryRes == "TPTMPnoPass") {
+                    try {
+                        const [ c ] = await this.runWithOutBrokenCore(task)
+                        const cres = await c;
+                        const res = FT.TMR(...result, cres)
+                        setExperimentStateForTwoPhaseTMR((prev) => {
+                            const news = [...prev]
+                            news[1] += 3
+                            if (res !== 0.5) news[3] += 1
+                            else news[2] += 1
+                            news[4] = news[3] / AppLen
+                            return news
+                        })
+                        return res
+                    } catch (error) {
+                        console.log(error)
+                    }
+                // 主阶段通过
+                } else {
+                    const res = result[0]
+                    setExperimentStateForTwoPhaseTMR((prev) => {
+                        const news = [...prev]
+                        news[1] += 2
+                        if (res !== 0.5) news[3] += 1
+                        else news[2] += 1
+                        news[4] = news[3] / AppLen
+                        return news
+                    })
+                    return res
+                }
+            })
+            res.push(finalPromise)
         }
         return Promise.all(res)
+    }
+
+    async auxCalFun(task, params) {
+        const {two_FreeCores, callArr, noMoreCore} = params
+        if (noMoreCore) return this.runWithTwoPhaseTMR(task)
+            // 在该两个内核上进行计算
+            const result = await Promise.all(callArr)
+            const primaryRes = FT.TPTMR_Primary(...result)
+            // 双阶段多模冗余按需阶段
+            if (primaryRes == "TPTMPnoPass") {
+                // 记录争议任务
+                if (this.brokenCores.size < 2) {
+                    const excludeCore = new Set([...two_FreeCores, ...this.brokenCores])
+                    const {freeCores: lastCore, callArr: lastCallRes} = await this.runOnDistinctFreeCores(1, excludeCore, task)
+                    // 重新计算一次
+                    const c = await lastCallRes[0]
+                    const fullcalCores = [...two_FreeCores, ...lastCore]
+                    console.log("Node Id: ", this.NodeID, " fullCalCores: ", fullcalCores)
+                    const [finalRes] = FT.TMR_with_fault_core(...result, c, fullcalCores)
+                    setExperimentStateForClusterTMR((prevState) => {
+                        const newState = [...prevState]
+                        newState[0] += 1
+                        newState[1] += 3
+                        if (finalRes !== 0.5) newState[3] += 1
+                        else newState[2] += 1
+                        newState[4] = newState[3] / newState[0]
+                        return newState
+                    }) 
+                    return finalRes
+                } else {
+                    // only two phase，没多余的内核使用了
+                    let c = null
+                    try {
+                        [c] = await this.runWithOutBrokenCore(task)
+                        const finalRes =  FT.TMR(...result, await c)
+                        setExperimentStateForClusterTMR((prevState) => {
+                            const newState = [...prevState]
+                            newState[0] += 1
+                            newState[1] += 3
+                            if (finalRes !== 0.5) newState[3] += 1
+                            else newState[2] += 1
+                            newState[4] = newState[3] / newState[0]
+                            return newState
+                        })
+                        return finalRes
+                    } catch (error) {
+                        console.error(error, result, c)
+                    }
+                }
+            // 主阶段通过
+            } else {
+                const finalRes = result[0]
+                setExperimentStateForClusterTMR((prevState) => {
+                    const newState = [...prevState]
+                    newState[0] += 1
+                    newState[1] += 2
+                    if (finalRes !== 0.5) newState[3] += 1
+                    else newState[2] += 1
+                    newState[4] = newState[3] / newState[0]
+                    return newState
+                })
+               console.log("Node Id: ", this.NodeID, " fullCalCores: ", two_FreeCores)
+                return finalRes
+            }
+    }
+
+    async runWithTwoPhaseTMRForDistinctCore(App) {
+        const res = []
+        for(let i = 0; i < App.length; i++) {
+            let task = App[i]
+            // 等待每次内核分配完后再计算
+            const {freeCores: two_FreeCores, callArr, noMoreCore} = await this.runOnDistinctFreeCores(2, this.brokenCores, task).catch(err => {
+                if (err == "no more distinct core") return {freeCores: [], callArr: [], noMoreCore: true}
+                else throw new Error(err);
+            })
+            // 不使用await 异步 防止计算阻塞内核分配
+            const majorityVoteRes = this.auxCalFun(task, {
+                two_FreeCores,
+                callArr,
+                noMoreCore
+            })
+            res.push(majorityVoteRes)
+        }
+        const finalRes = await Promise.all(res)
+        return finalRes
     }
 
     async runWithReactiveTMR(App) {
@@ -280,41 +446,25 @@ class Node {
         for(let i = 0; i < App.length; i++) {
             let task = App[i]
             // 等待每次内核分配完后再计算
-            const {freeCores: two_FreeCores, calArr, noMoreCore} = await this.runOnDistinctFreeCores(2, this.brokenCores, task).catch(err => {
-                if (err == "no more distinct core") return {freeCores: [], calArr: [], noMoreCore: true}
+            const {freeCores: two_FreeCores, callArr, noMoreCore} = await this.runOnDistinctFreeCores(2, this.brokenCores, task).catch(err => {
+                if (err == "no more distinct core") return {freeCores: [], callArr: [], noMoreCore: true}
                 else throw new Error(err);
             })
-
-
-            res.push(this.calTask(task, 2, AppRecord.round, {
+            // 不使用await 异步 防止计算阻塞内核分配
+            const majorityVoteRes = this.ReactiveTMR(task, {
                 two_FreeCores,
-                calArr,
+                callArr,
                 noMoreCore
-            }))
-        }
-        this.R_TMR_roundEnd(AppRecord.round)
-        return Promise.all(res)
-    }
+            }).then(res => {
+                this.tryReactiveCore(task, res, AppRecord.round)
+                return res
+            })
 
-    // taskid 增序
-    async calTask(task, method, round, reactiveTMRParams) {
-        
-        if (method === 0) {
-            // Traditional TMR
-            return this.TMR(task);
+            res.push(majorityVoteRes)
         }
-        if (method === 1) {
-            // Twophase TMR
-            return this.TwoPhaseTMR(task)
-        }
-        if (method === 2) {
-            // Reactive TMR
-            // 坏了两个Reactive TMR失效内部降级为TwoPhaseTMR 
-            const majorityVoteRes = await this.ReactiveTMR(task, reactiveTMRParams)
-            this.tryReactiveCore(task, majorityVoteRes, round)
-            return majorityVoteRes
-            // 基于TwoPhase TMR,一些调度改变
-        }
+        const finalRes = await Promise.all(res)
+        this.R_TMR_roundEnd(AppRecord.round)
+        return finalRes
     }
 
     // 一次round结束后复制一下bit arr并检查
@@ -345,15 +495,17 @@ class FT{
     static TMR_with_fault_core(a, b, c, cores) {
         if (a == b) return [a, cores[2]];
         if (a == c) return [c, cores[1]];
-        if (b == c) return [b, cores[0]];;
-        throw new Error('TMR error Majority Voting can\'nt determine the result');
+        if (b == c) return [b, cores[0]];
+        console.log('TMR_with_fault_core error Majority Voting can\'nt determine the result', a, b, c)
+        return [0, null];
     }
 
     static TMR(a, b, c){
         if (a == b) return a;
         if (a == c) return c;
         if (b == c) return b;
-        throw new Error('TMR error Majority Voting can\'nt determine the result');
+        console.log('TMR error Majority Voting can\'nt determine the result', a, b, c)
+        return 0;
     }
 
     static TPTMR_Primary(a, b) {

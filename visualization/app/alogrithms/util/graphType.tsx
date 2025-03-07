@@ -1,7 +1,9 @@
 export interface GraphNode {
-    id: number;
-    duration: number
+    duration: number;
+    complete: boolean;
+    predecessors: number[];
+    predecessornums: number;
 }
 
-export type Graph = GraphNode[][]
+export type Graph = GraphNode[]
 

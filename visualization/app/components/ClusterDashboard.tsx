@@ -1,43 +1,61 @@
-import { DashboardContainer, ClusterGrid, CpuCore, StorageCore } from "./styledComp";
+"use client";
+import { DashboardContainer, ClusterGrid } from "./styledComp";
+import { insetCoreStateForClusterTMR, setExperimentStateForClusterTMR, insetSTForClusterTMR } from "../util/index"
+import { hybirdFT_FD_InitialCoreState, ClusterNumber, hybirdFT_FD } from "../alogrithms/main";
 import Machine from "./Machine";
-import DeviceState from "./State"
+import { ExperimentRow } from "./ExperimentResult";
+import { useEffect, useMemo, useState } from "react";
 
-const StatusInfoBar = () => (
-    <div className="w-[800px]">
-        <div className="state ml-5 flex items-center w-[400px] justify-between">
-            Cores: 
-            <div className="flex items-center">
-            <span className="mr-2 ml-2"><CpuCore state={DeviceState[0]}/></span> Idle 
-            <span className="mr-2 ml-2"><CpuCore state={DeviceState[1]}/></span> Busy 
-            <span className="mr-2 ml-2"><CpuCore state={DeviceState[2]}/></span> Damaged 
-            <span className="mr-2 ml-2"><CpuCore state={DeviceState[0]} disabled/></span> Disabled 
-            </div>
-        </div>
 
-        <div className="state ml-5 flex items-center w-[400px] justify-between">
-            Storages: 
-            <div className="flex items-center">
-            <span className="mr-2 ml-2"><StorageCore state={DeviceState[0]}/></span> Normal 
-            <span className="mr-2 ml-2"><StorageCore state={DeviceState[2]}/></span> Damaged 
-            <span className="mr-2 ml-2"><StorageCore state={DeviceState[0]} disabled/></span> Disabled 
-            </div>
-        </div>
-        
-    </div>
-)
+
+
 
 const ClusterDashboard = () => {
+    const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
+    const [experimentStates, setExperimentStates] = useState([0,0,0,0,0])
+    const [STs, setSTs] = useState(new Array(ClusterNumber).fill(0))
+    const [coresDisabled, setCoresDisabled] = useState(
+      new Array(ClusterNumber).fill(null).map(() => new Array(4).fill(false))
+    )
+
+    useEffect(() => {
+      insetCoreStateForClusterTMR(setCoresState)
+      setExperimentStateForClusterTMR(setExperimentStates)
+      setExperimentStateForClusterTMR(setCoresDisabled)
+      // insetSTForClusterTMR(setSTs)
+    }, [])
+
+    function startExperiment() {
+      hybirdFT_FD()
+      console.log("start experiment")
+    }
+
     return (
+      <div className="flex w-full justify-around pb-20">
       <DashboardContainer>
         <h1 className="text-2xl font-bold mt-5 mb-5">Cluster Dashboard</h1>
-        <StatusInfoBar />
         <ClusterGrid>
-          {[...Array(5)].map((_, index) => (
-            <Machine key={index} machineId={index + 1} />
+          {Array(ClusterNumber).fill(null).map((_, nodeId) => (
+            <Machine
+              key={nodeId}
+              machineId={nodeId + 1}
+              coreState={coresState[nodeId]}
+              coresDisabled={coresDisabled[nodeId]}
+            />
           ))}
         </ClusterGrid>
-        <h1 className="text-2xl font-bold mt-5 mb-5">Experiment Result</h1>
+        <button className="border border-gray-200 py-2 px-4 rounded" onClick={startExperiment}>Start Experiment</button>
       </DashboardContainer>
+      <DashboardContainer>
+            <h1 className="text-2xl font-bold mt-5 mb-5">Experiment Result</h1>
+            <ExperimentRow>Original task: {experimentStates[0]}</ExperimentRow>
+            <ExperimentRow>Executed task: {experimentStates[1]}</ExperimentRow>
+            <ExperimentRow>Right result: {experimentStates[2]}</ExperimentRow>
+            <ExperimentRow>Wrong result: {experimentStates[3]}</ExperimentRow>
+            <ExperimentRow>PoF: {experimentStates[4].toFixed(4)}</ExperimentRow>
+            <ExperimentRow>ST: {STs.map(i => i.toFixed(4))}</ExperimentRow>
+      </DashboardContainer>
+      </div>
     );
 };
 

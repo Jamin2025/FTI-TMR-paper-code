@@ -29,7 +29,7 @@ export const StorageList = styled.div`
   margin-top: 10px;
 `;
 
-interface StateProp {
+export interface StateProp {
     state?: string;
     disabled?: boolean;
 }
@@ -41,9 +41,9 @@ export const StorageCore = styled.div<StateProp>`
   border-radius: 5%;
   background-color: ${(props: StateProp) => {
     switch (props.state) {
-      case "green":
+      case "Idle":
         return "#28a745";
-      case "red":
+      case "Broke":
         return "#e74c3c";
       default:
         return "#28a745";
@@ -69,11 +69,11 @@ export const CpuCore = styled.div<StateProp>`
   border-radius: 50%;
   background-color: ${(props: StateProp) => {
     switch (props.state) {
-      case "green":
+      case "Idel":
         return "#28a745";
-      case "yellow":
+      case "Busy":
         return "#ffcc00";
-      case "red":
+      case "Broke":
         return "#e74c3c";
       default:
         return "#28a745";
@@ -83,7 +83,7 @@ export const CpuCore = styled.div<StateProp>`
     content: "";
     position: absolute;
     top: 0px;
-    left: 9px;
+    left: 10px;
     display: block;
     width:1px;
     height: 19px;
@@ -104,7 +104,7 @@ export const DashboardContainer = styled.div`
 
 export const ClusterGrid = styled.div`
   display: flex;
-  width: 800px;
+  width: 720px;
   flex-wrap: wrap;
   justify-content: start;
 `;

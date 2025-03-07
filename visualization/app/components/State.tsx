@@ -1,7 +1,7 @@
 const State = [
-   "green",
-    "yellow",
-    "blue"
+    "Idel",
+    "Busy",
+    "Broke"
 ]
 
 export default State
