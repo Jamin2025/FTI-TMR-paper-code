@@ -38,34 +38,31 @@ class Core {
 
     curCalculate = Promise.resolve();
 
-    errorState() {
-        this.isPermentFault = true;
-    }
-
     calculate(task) {
         this.calCount++;
+        if (this.isCalculate) return this.curCalculate.then(() => this.calculate(task));
         this.isCalculate = true;
         const isTMR = this.mode === 0
         const isTwoPhaseTMR = this.mode === 1
         const isReactiveTMR = this.mode === 2
         const isCluterTMR = this.mode === 3
-        if (isTMR) coreToBusyForTMR(this.id)
-        if (isTwoPhaseTMR) coreToBusyForTwoPhaseTMR(this.id)
-        if (isReactiveTMR) {
-            coreToBusyForReactiveTMR(this.id)
+        if (isTMR) coreToBusyForTMR(this.id, this.NodeID)
+        else if (isTwoPhaseTMR) coreToBusyForTwoPhaseTMR(this.id, this.NodeID)
+        else if (isReactiveTMR) {
+            coreToBusyForReactiveTMR(this.id, this.NodeID)
             if (!this.active_) console.info("try reactive")
         }
-        if (isCluterTMR) coreToBusyForClusterTMR(this.id, this.NodeID)
+        else if (isCluterTMR) coreToBusyForClusterTMR(this.id, this.NodeID)
         this.curCalculate = new Promise((resolve) => {
             setTimeout(() => {
                 if (this.isNormalOperate() && !hitProbability(task.transientFaultProbality)) task.result = 0.5
                 else task.result = Math.random()
-                resolve(task.result)
                 this.isCalculate = false
-                if (isTMR) coreRestoreForTMR(this.id, this.isPermentFault)
-                if (isTwoPhaseTMR) coreRestoreForTwoPhaseTMR(this.id, this.isPermentFault)
-                if (isReactiveTMR) coreRestoreForReactiveTMR(this.id, this.isPermentFault)
-                if (isCluterTMR) coreRestoreForClusterTMR(this.id, this.isPermentFault, this.NodeID)
+                if (isTMR) coreRestoreForTMR(this.id, this.isPermentFault, this.NodeID)
+                else if (isTwoPhaseTMR) coreRestoreForTwoPhaseTMR(this.id, this.isPermentFault, this.NodeID)
+                else if (isReactiveTMR) coreRestoreForReactiveTMR(this.id, this.isPermentFault, this.NodeID)
+                else if (isCluterTMR) coreRestoreForClusterTMR(this.id, this.isPermentFault, this.NodeID)
+                resolve(task.result)
             }, task.duration * 1000)
         })
         return this.curCalculate

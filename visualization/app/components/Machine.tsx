@@ -10,14 +10,15 @@ const getRandomCpuState = (): string => {
 interface MachineProps { 
   machineId: number,
   coreState?: string[],
-  storageState?: string[],
   coresDisabled?: boolean[]
+  isLeader?: boolean
+  leaderCore?: number[]
 }
 
-const Machine = ({ machineId, coreState, storageState, coresDisabled }: MachineProps) => {
+const Machine = ({ machineId, coreState, coresDisabled, isLeader, leaderCore }: MachineProps) => {
     return (
-      <MachineContainer>
-        <h3>Node {machineId}</h3>
+      <MachineContainer bordercolor={isLeader ? '#87CEEB' : "#ddd"}>
+        <h3>Node {machineId + 1}</h3>
         <CpuList>
           <TitleBox>Cores:</TitleBox>
           <div style={{ display: "flex", justifyContent: "space-between", width: "90px" }}>
@@ -26,6 +27,7 @@ const Machine = ({ machineId, coreState, storageState, coresDisabled }: MachineP
                 key={index}
                 state={(coreState && coreState[index]) || getRandomCpuState()} 
                 disabled={coresDisabled && coresDisabled[index]}
+                bordercolor={isLeader && leaderCore && leaderCore[machineId] === index ? '#F7DC6F' : "transparent"}
               />
             ))}
           </div>

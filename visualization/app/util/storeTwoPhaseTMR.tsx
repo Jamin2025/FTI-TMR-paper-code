@@ -3,28 +3,28 @@ export function insetCoreStateForTwoPhaseTMR(method: any) {
     insertInMethod("setCoreStateForTwoPhaseTMR", method)
 }
 
-export function coreToBusyForTwoPhaseTMR(id: number) {
+export function coreToBusyForTwoPhaseTMR(id: number, NodeId: number) {
     callMethod('setCoreStateForTwoPhaseTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
-        newCoreState[id] = "Busy"
-        return newCoreState
-    })
-}
-
-export function coreRestoreForTwoPhaseTMR(id: number, isPermentFault: boolean) {
-    callMethod('setCoreStateForTwoPhaseTMR', (prevCoreState: any) => {
-        const newCoreState = [...prevCoreState]
+        const cores = [...newCoreState[NodeId]]
+        cores[id] = "Busy"
         // console.log(this.isPermentFault)
-        newCoreState[id] = isPermentFault ? "Broke" : "Idel"
+        newCoreState[NodeId] = cores
         return newCoreState
     })
 }
 
-
-
-export function insetStorageStateForTwoPhaseTMR(method: any) {
-    insertInMethod("setStorageStateForTwoPhaseTMR", method)
+export function coreRestoreForTwoPhaseTMR(id: number, isPermentFault: boolean, NodeId: number) {
+    callMethod('setCoreStateForTwoPhaseTMR', (prevCoreState: any) => {
+        const newCoreState = [...prevCoreState]
+        const cores = [...newCoreState[NodeId]]
+        cores[id] = isPermentFault ? "Broke" : "Idel"
+        // console.log(this.isPermentFault)
+        newCoreState[NodeId] = cores
+        return newCoreState
+    })
 }
+
 
 export function insetExperimentStateForTwoPhaseTMR(method: any) {
     insertInMethod("setExperimentStateForTwoPhaseTMR", method)

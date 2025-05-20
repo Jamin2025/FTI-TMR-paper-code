@@ -5,9 +5,11 @@ import styled from 'styled-components'
 export const TitleBox = styled.div`
   width: 50px;
 `;
-
+interface MachineContainerProps {
+  bordercolor?: string;
+}
 // 样式定义
-export const MachineContainer = styled.div`
+export const MachineContainer = styled.div<MachineContainerProps>`
   width: 200px;
   margin: 20px;
   padding: 10px;
@@ -15,6 +17,9 @@ export const MachineContainer = styled.div`
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   text-align: center;
+  border-color: ${(props: MachineContainerProps) => {
+    return props.bordercolor;
+  }};
 `;
 
 export const CpuList = styled.div`
@@ -32,6 +37,7 @@ export const StorageList = styled.div`
 export interface StateProp {
     state?: string;
     disabled?: boolean;
+    bordercolor?: string
 }
 
 export const StorageCore = styled.div<StateProp>`
@@ -83,13 +89,16 @@ export const CpuCore = styled.div<StateProp>`
     content: "";
     position: absolute;
     top: 0px;
-    left: 10px;
+    left: 9px;
     display: block;
     width:1px;
     height: 19px;
     background: black;
     transform: rotate(-45deg);
   }`}
+  ${(props: StateProp) => props.bordercolor && `
+    border: 1px solid ${props.bordercolor}
+    `}
 `;
 
 export const DashboardContainer = styled.div`

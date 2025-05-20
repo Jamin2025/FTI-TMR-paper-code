@@ -3,19 +3,24 @@ export function insetCoreStateForReactiveTMR(method: any) {
     insertInMethod("setCoreStateForReactiveTMR", method)
 }
 
-export function coreToBusyForReactiveTMR(id: number) {
+export function coreToBusyForReactiveTMR(id: number, NodeId: number) {
     callMethod('setCoreStateForReactiveTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
-        newCoreState[id] = "Busy"
+        const cores = [...newCoreState[NodeId]]
+        cores[id] = "Busy"
+        // console.log(this.isPermentFault)
+        newCoreState[NodeId] = cores
         return newCoreState
     })
 }
 
-export function coreRestoreForReactiveTMR(id: number, isPermentFault: boolean) {
+export function coreRestoreForReactiveTMR(id: number, isPermentFault: boolean, NodeId: number) {
     callMethod('setCoreStateForReactiveTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
+        const cores = [...newCoreState[NodeId]]
+        cores[id] = isPermentFault ? "Broke" : "Idel"
         // console.log(this.isPermentFault)
-        newCoreState[id] = isPermentFault ? "Broke" : "Idel"
+        newCoreState[NodeId] = cores
         return newCoreState
     })
 }
@@ -38,18 +43,18 @@ export function insetCoresDisabledForReactiveTMR(method: any) {
     insertInMethod("setCoresDisabledForReactiveTMR", method)
 }
 
-export function deactiveCoresForReactiveTMR(id: number) {
+export function deactiveCoresForReactiveTMR(id: number, NodeId: number) {
     callMethod('setCoresDisabledForReactiveTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
-        newCoreState[id] = true
+        newCoreState[NodeId][id] = true
         return newCoreState
     })
 }
 
-export function activeCoresForReactiveTMR(id: number) {
+export function activeCoresForReactiveTMR(id: number, NodeId: number) {
     callMethod('setCoresDisabledForReactiveTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
-        newCoreState[id] = false
+        newCoreState[NodeId][id] = false
         return newCoreState
     })
 }

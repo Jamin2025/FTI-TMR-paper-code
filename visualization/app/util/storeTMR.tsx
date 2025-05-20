@@ -3,19 +3,24 @@ export function insetCoreStateForTMR(method: any) {
     insertInMethod("setCoreStateForTMR", method)
 }
 
-export function coreToBusyForTMR(id: number) {
+export function coreToBusyForTMR(id: number, NodeId: number) {
     callMethod('setCoreStateForTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
-        newCoreState[id] = "Busy"
+        const cores = [...newCoreState[NodeId]]
+        cores[id] = "Busy"
+        // console.log(this.isPermentFault)
+        newCoreState[NodeId] = cores
         return newCoreState
     })
 }
 
-export function coreRestoreForTMR(id: number, isPermentFault: boolean) {
+export function coreRestoreForTMR(id: number, isPermentFault: boolean, NodeId: number) {
     callMethod('setCoreStateForTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
+        const cores = [...newCoreState[NodeId]]
+        cores[id] = isPermentFault ? "Broke" : "Idel"
         // console.log(this.isPermentFault)
-        newCoreState[id] = isPermentFault ? "Broke" : "Idel"
+        newCoreState[NodeId] = cores
         return newCoreState
     })
 }

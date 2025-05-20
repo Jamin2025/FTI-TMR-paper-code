@@ -8,7 +8,10 @@ export function insetCoreStateForClusterTMR(method: any) {
 export function coreToBusyForClusterTMR(id: number, NodeId: number) {
     callMethod('setCoreStateForClusterTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
-        newCoreState[NodeId][id] = "Busy"
+        const cores = [...newCoreState[NodeId]]
+        cores[id] = "Busy"
+        // console.log(this.isPermentFault)
+        newCoreState[NodeId] = cores
         return newCoreState
     })
 }
@@ -16,8 +19,10 @@ export function coreToBusyForClusterTMR(id: number, NodeId: number) {
 export function coreRestoreForClusterTMR(id: number, isPermentFault: boolean, NodeId: number) {
     callMethod('setCoreStateForClusterTMR', (prevCoreState: any) => {
         const newCoreState = [...prevCoreState]
-        console.log(NodeId, id, isPermentFault)
-        newCoreState[NodeId][id] = isPermentFault ? "Broke" : "Idel"
+        const cores = [...newCoreState[NodeId]]
+        cores[id] = isPermentFault ? "Broke" : "Idel"
+        // console.log(this.isPermentFault)
+        newCoreState[NodeId] = cores
         return newCoreState
     })
 }
@@ -42,4 +47,33 @@ export function setSTForClusterTMR(fun: any) {
 
 export function insetSTForClusterTMR(method: any) {
     insertInMethod("setSTForClusterTMR", method)
+}
+
+export function setLeaderForClusterTMR(fun: any) {
+    callMethod("setLeaderForClusterTMR", fun)
+}
+
+export function insetLeaderForClusterTMR(method: any) {
+    insertInMethod("setLeaderForClusterTMR", method)
+}
+
+
+export function insetCoresDisabledForClusterTMR(method: any) {
+    insertInMethod("setCoresDisabledForClusterTMR", method)
+}
+
+export function deactiveCoresForClusterTMR(NodeID: number, id: number) {
+    callMethod('setCoresDisabledForClusterTMR', (prevCoreState: any) => {
+        const newCoreState = [...prevCoreState]
+        newCoreState[NodeID][id] = true
+        return newCoreState
+    })
+}
+
+export function activeCoresForClusterTMR(NodeID: number, id: number) {
+    callMethod('setCoresDisabledForClusterTMR', (prevCoreState: any) => {
+        const newCoreState = [...prevCoreState]
+        newCoreState[NodeID][id] = false
+        return newCoreState
+    })
 }
