@@ -51,7 +51,7 @@ export default function Home() {
     D.unshift(["Orginal Tasks Num", "PoF", "Method"])
     return D
   }, [TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp])
- 
+  console.log(taskNumExperimentData, taskPofExperimentData)
   // 创建多个状态，最后合并一起，归并排序
   const AppBeTest = isRandomData ? randomTask  : graphData;
   return (
