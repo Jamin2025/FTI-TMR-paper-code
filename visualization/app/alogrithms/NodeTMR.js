@@ -28,7 +28,7 @@ class NodeTMR extends Node_ {
                     news[4] = news[3] / news[0] 
                     return news
                 })
-                typeof funAfterExecuteEachTask == 'function' && funAfterExecuteEachTask(3)
+                typeof funAfterExecuteEachTask == 'function' && funAfterExecuteEachTask(1, 3, votRes)
                 return votRes
             }))
         }

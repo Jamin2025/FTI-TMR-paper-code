@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { ReactiveTMR, hybirdFT_FD_InitialCoreState, ClusterNumber } from "../alogrithms/main"
 import { insetCoreStateForReactiveTMR, insetExperimentStateForReactiveTMR, insetCoresDisabledForReactiveTMR } from "../util/index"
 
-const ReactiveTMRDashboard = ({AppBeTest, isRandomData, setRTMRexcutedNumsComp}: any) => {
+const ReactiveTMRDashboard = ({AppBeTest, isRandomData, setRTMRexcutedNumsComp, setRTMRexcutedPofComp}: any) => {
     const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
     
     // const [storageState, setStorageState] = useState(ReactiveTMRIntialState.storages)
@@ -39,7 +39,7 @@ const ReactiveTMRDashboard = ({AppBeTest, isRandomData, setRTMRexcutedNumsComp}:
                 />
               ))}
             </div>
-            <button className="border border-gray-200 py-2 px-4 rounded" onClick={() => ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsComp)}>Start Experiment</button>
+            <button className="border border-gray-200 py-2 px-4 rounded" onClick={() => ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsComp, setRTMRexcutedPofComp)}>Start Experiment</button>
             
           </DashboardContainer>
         </div>

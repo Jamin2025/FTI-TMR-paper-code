@@ -15,7 +15,7 @@ const { setLeaderForClusterTMR, setExperimentStateForClusterTMR } = require("../
  */
 
 // node.brokeCore(1)
-const Turn = 1000
+const Turn = 100
 
 export const hybirdFT_FD_InitialCoreState = [
     ['Broke', 'Idel', 'Idel', 'Idel'],
@@ -31,7 +31,7 @@ export const ReactiveTMRIntialState = {
     cores: ['Broke', 'Idel', 'Idel', 'Idel'],
     storages: ['Idel', 'Idel', 'Idel', 'Idel']
 }
-export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsComp) {
+export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsComp, setRTMRexcutedPofComp) {
     const nodes = new Array(ClusterNumber).fill(null).map((_, i) => new NodeReactiveTMR(i))
     for (let i = 0; i < ClusterNumber; i++) {
         for (let j = 0; j < 4; j++) {
@@ -39,22 +39,23 @@ export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsCom
         }
     }
     const res = []
+    let taskNums = 0, excutedNums = 0, failedNums = 0;
+    const newExcutedNumsComp = [], newExcutedPofComp = [];
     if (isRandomData) {
         for (let i = 0; i < Turn; i++) {
             for(let j = 0; j < ClusterNumber; j++) {
                 const node = nodes[j];
-                res.push(node.runWithReactiveTMR(AppBeTest, (orginalTaskNum, excutedTaskNum) => {
-                    setRTMRexcutedNumsComp(excutedNumsComp => {
-                        const newExcutedNumsComp = [...excutedNumsComp]
-                        const len = excutedNumsComp.length;
-                        if (len === 0) {
-                            newExcutedNumsComp.push([orginalTaskNum, excutedTaskNum, 'R-TMR'])
-                        } else {
-                            const prev = excutedNumsComp[len - 1];
-                            newExcutedNumsComp.push([prev[0] + orginalTaskNum, prev[1] + excutedTaskNum, 'R-TMR'])
-                        }
-                        return newExcutedNumsComp
-                    })
+                res.push(node.runWithReactiveTMR(AppBeTest, (taskNum, excutedTaskNum, taskRes) => {
+                    taskNums += taskNum;
+                    excutedNums += excutedTaskNum;
+                    if (taskRes !== 0.5) failedNums += 1;
+                    const pof = (failedNums / taskNums).toFixed(4)
+                    newExcutedNumsComp.push([taskNums, excutedNums, 'R-TMR'])
+                    if (taskNum !== 0) {
+                        newExcutedPofComp.push([taskNums, pof, 'R-TMR'])
+                        setRTMRexcutedPofComp([...newExcutedPofComp])
+                    }
+                    setRTMRexcutedNumsComp([...newExcutedNumsComp])
                 }))
             }
             await Promise.all(res)
@@ -68,7 +69,7 @@ export const TwoPhaseTMRIntialState = {
     storages: ['Idel', 'Idel', 'Idel', 'Idel']
 }
 
-export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsComp) {
+export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp) {
         // 同样也是五个机器
     const nodes = new Array(ClusterNumber).fill(null).map((_, i) => new NodeTwoPhaseTMR(i))
     for (let i = 0; i < ClusterNumber; i++) {
@@ -77,22 +78,21 @@ export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsCo
         }
     }
     const res = []
+    let taskNums = 0, excutedNums = 0, failedNums = 0;
+    const newExcutedNumsComp = [], newExcutedPofComp = [];
     if (isRandomData) {
         for (let i = 0; i < Turn; i++) {
             for(let j = 0; j < ClusterNumber; j++) {
                 const node = nodes[j];
-                res.push(node.runWithTwoPhaseTMR(AppBeTest, (excutedNum) => {
-                    setTPTMRexcutedNumsComp(excutedNumsComp => {
-                        const newExcutedNumsComp = [...excutedNumsComp]
-                        const len = excutedNumsComp.length;
-                        if (len === 0) {
-                            newExcutedNumsComp.push([1, excutedNum, 'TP-TMR'])
-                        } else {
-                            const prev = excutedNumsComp[len - 1];
-                            newExcutedNumsComp.push([prev[0] + 1, prev[1] + excutedNum, 'TP-TMR'])
-                        }
-                        return newExcutedNumsComp
-                    })
+                res.push(node.runWithTwoPhaseTMR(AppBeTest, (taskNum, excutedNum, taskRes) => {
+                    taskNums += taskNum
+                    excutedNums += excutedNum
+                    if (taskRes !== 0.5) failedNums += 1;
+                    const pof = (failedNums / taskNums).toFixed(4)
+                    newExcutedNumsComp.push([taskNums, excutedNums, 'TP-TMR'])
+                    newExcutedPofComp.push([taskNums, pof, 'TP-TMR'])
+                    setTPTMRexcutedNumsComp([...newExcutedNumsComp])
+                    setTPTMRexcutedPofComp([...newExcutedPofComp])
                 }))
             }
             await Promise.all(res)
@@ -105,7 +105,7 @@ export const TMRIntialState = {
     cores: ['Broke', 'Idel', 'Idel', 'Idel']
 }
 
-export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp) {
+export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp) {
     // 同样也是五个机器
     const nodes = new Array(ClusterNumber).fill(null).map((_, i) => new NodeTMR(i))
     for (let i = 0; i < ClusterNumber; i++) {
@@ -114,22 +114,21 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp) {
         }
     }
     const res = []
+    let taskNums = 0, excutedNums = 0, failedNums = 0;
+    const newExcutedNumsComp = [], newExcutedPofComp = [];
     if (isRandomData) {
         for (let i = 0; i < Turn; i++) {
             for(let j = 0; j < ClusterNumber; j++) {
                 const node = nodes[j];
-                res.push(node.runWithTMR(AppBeTest, (excutedNum) => {
-                    setTMRExcutedNumsComp((excutedNumsComp) => {
-                        const newExcutedNumsComp = [...excutedNumsComp]
-                        const len = excutedNumsComp.length;
-                        if (len === 0) {
-                            newExcutedNumsComp.push([1, excutedNum, 'C-TMR'])
-                        } else {
-                            const prev = excutedNumsComp[len - 1];
-                            newExcutedNumsComp.push([prev[0] + 1, prev[1] + excutedNum, 'C-TMR'])
-                        }
-                        return newExcutedNumsComp
-                    })
+                res.push(node.runWithTMR(AppBeTest, (taskNum, excutedNum, taskRes) => {
+                    taskNums += taskNum;
+                    excutedNums += excutedNum;
+                    if (taskRes !== 0.5) failedNums += 1;
+                    const pof = (failedNums / taskNums).toFixed(4)
+                    newExcutedNumsComp.push([taskNums, excutedNums, 'C-TMR'])
+                    newExcutedPofComp.push([taskNums,  pof, 'C-TMR'])
+                    setTMRExcutedNumsComp([...newExcutedNumsComp])
+                    setTMRExcutedPofComp([...newExcutedPofComp])
                 }))
             }
             await Promise.all(res)
@@ -142,7 +141,7 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp) {
 
 
 
-async function isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, setTPTDTMRexcutedNumsComp) {
+async function isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, funAfterExecuteEachTask) {
     let finalRes = null;
     const arr = await Promise.all([checkCore1.calculate(task), checkCore2.calculate(task)])
     if (arr[0] !== arr[1]) {
@@ -156,13 +155,7 @@ async function isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, se
             newState[1] += 4
             return newState
         })
-        setTPTDTMRexcutedNumsComp(excutedNumsComp => {
-            const newD = [...excutedNumsComp]
-            const prevLast = newD[newD.length - 1]
-            newD.push([prevLast[0], prevLast[1] + 4, 'FDT-TMR'])
-            return newD
-        })
-       
+        funAfterExecuteEachTask(0, 4, 0.5)
     } else {
         finalRes = arr[0]
         setExperimentStateForClusterTMR((prevState) => {
@@ -170,18 +163,13 @@ async function isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, se
             newState[1] += 3
             return newState
         }) 
-        setTPTDTMRexcutedNumsComp(excutedNumsComp => {
-            const newD = [...excutedNumsComp]
-            const prevLast = newD[newD.length - 1]
-            newD.push([prevLast[0], prevLast[1] + 3, 'FDT-TMR'])
-            return newD
-        })
+        funAfterExecuteEachTask(0, 4, 0.5)
     }
     const beTestedRes = await beTestedCore.calculate(task)
     return beTestedRes === finalRes
 }
 
-async function testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, selfCheckingCounter, setTPTDTMRexcutedNumsComp) {
+async function testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, selfCheckingCounter, funAfterExecuteEachTask) {
     // 150–300ms
     // const deactiveCores = []
     for(let i = 0; i < 3; i++) {
@@ -205,7 +193,7 @@ async function testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, s
                         const checkCore1 = Leaders[a].cores[leaderCores[a]]
                         const checkCore2 = Leaders[b].cores[leaderCores[b]]
                         
-                        const passTest = async () => await isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, setTPTDTMRexcutedNumsComp)
+                        const passTest = async () => await isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, funAfterExecuteEachTask)
                         if (await passTest() || await passTest()) {
                             beTestedNode.conflictTasks[core].delete(taskID)
                             
@@ -240,7 +228,7 @@ async function testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, s
     // return deactiveCores
 }
 
-async function testNoLeaderNode(Leaders, eachNode, leaderCores, AppBeTest, selfCheckingCounter, setTPTDTMRexcutedNumsComp) {
+async function testNoLeaderNode(Leaders, eachNode, leaderCores, AppBeTest, selfCheckingCounter, funAfterExecuteEachTask) {
     for(let i = 0; i < eachNode.length; i++) {
         for(let core = 0; core < 4; core++) {
             const beTestedNode = eachNode[i]
@@ -259,7 +247,7 @@ async function testNoLeaderNode(Leaders, eachNode, leaderCores, AppBeTest, selfC
                         const beTestedCore = beTestedNode.cores[core]
                         const checkCore1 = Leaders[1].cores[leaderCores[1]]
                         const checkCore2 = Leaders[2].cores[leaderCores[2]]
-                        const passTest = async () => await isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, setTPTDTMRexcutedNumsComp)
+                        const passTest = async () => await isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, funAfterExecuteEachTask)
                         if (await passTest() || await passTest()) {
                             beTestedNode.conflictTasks[core].delete(taskID)
                         } else {
@@ -286,7 +274,7 @@ async function testNoLeaderNode(Leaders, eachNode, leaderCores, AppBeTest, selfC
         }
     }
 }
-export async function hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp) {
+export async function hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, setTPTDTMRexcutedPofComp) {
 
     let checkCycle = 2 // 指数增长的checkCycle // 极限为100轮次
     const limit = 100
@@ -296,7 +284,23 @@ export async function hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPT
             if (hybirdFT_FD_InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
         }
     }
-    let selfCheckingCounter = 0
+    // 记录用于指数回退
+    let selfCheckingCounter = 0;
+    let taskNums = 0, excutedNums = 0, failedNums = 0;
+    const newExcutedNumsComp = [], newExcutedPofComp = [];
+
+    function funAfterExecuteEachTask(taskNum, excutedNum, taskRes) {
+        taskNums += taskNum
+        excutedNums += excutedNum
+        if (taskRes !== 0.5) failedNums += 1
+        const pof = (failedNums / taskNums).toFixed(4)
+        newExcutedNumsComp.push([taskNums, excutedNums, 'FDT-TMR'])
+        setTPTDTMRexcutedNumsComp([...newExcutedNumsComp])
+        if (taskNum !== 0) {
+            newExcutedPofComp.push([taskNums,  pof, 'FDT-TMR'])
+            setTPTDTMRexcutedPofComp([...newExcutedPofComp])
+        }
+    }
     // 相当于每个机器跑了Turn * AppBeTest.length个任务
     for (let turn = 1; turn <= Turn; turn++) {
         
@@ -304,19 +308,7 @@ export async function hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPT
         for (let i = 0; i < ClusterNumber; i++) {
             if (!nodes[i].hasAvaliableCore()) continue
             if (isRandomData) {
-                res.push(nodes[i].runWithTwoPhaseTMRForDistinctCore(AppBeTest, (excutedNum) => {
-                    setTPTDTMRexcutedNumsComp((excutedNumsComp) => {
-                        const newExcutedNumsComp = [...excutedNumsComp]
-                        const len = excutedNumsComp.length;
-                        if (len === 0) {
-                            newExcutedNumsComp.push([1, excutedNum, 'FDT-TMR'])
-                        } else {
-                            const prev = excutedNumsComp[len - 1];
-                            newExcutedNumsComp.push([prev[0] + 1, prev[1] + excutedNum, 'FDT-TMR'])
-                        }
-                        return newExcutedNumsComp
-                    })
-                }))
+                res.push(nodes[i].runWithTwoPhaseTMRForDistinctCore(AppBeTest, funAfterExecuteEachTask))
             }
         }
         let toNextTurn = false
@@ -352,11 +344,11 @@ export async function hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPT
             }
             // election end
             // Leader互检 0号leader由1号2号检查。1号leader由0，2号检查。2号leader由0，1号检查
-            await testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, selfCheckingCounter, setTPTDTMRexcutedNumsComp)
+            await testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, selfCheckingCounter, funAfterExecuteEachTask)
             
             if (Leaders.every(leader => leader.hasAvaliableCore())) {
                 // leader 检查完毕，检查非leader
-                await testNoLeaderNode(Leaders, nodes.filter((node) => !Leaders.includes(node)), leaderCores, AppBeTest, selfCheckingCounter, setTPTDTMRexcutedNumsComp)
+                await testNoLeaderNode(Leaders, nodes.filter((node) => !Leaders.includes(node)), leaderCores, AppBeTest, selfCheckingCounter, funAfterExecuteEachTask)
                 // console.log("test end")
                 setLeaderCore({})
                 setLeaderForClusterTMR([-1, -1, -1])
@@ -374,11 +366,6 @@ export async function hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPT
    
 }
 
-async function test() {
-    const node = new Node_()
-    const AppBeTest = new Array(2).fill(null).map(() => new Task());
-    node.runWithReactiveTMR(AppBeTest)
-}
 // test()
 // TMR()
 // TwoPhaseTMR()

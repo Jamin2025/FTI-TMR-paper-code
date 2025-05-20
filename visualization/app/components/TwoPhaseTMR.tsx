@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { TwoPhaseTMR, hybirdFT_FD_InitialCoreState, ClusterNumber } from "../alogrithms/main"
 import { insetCoreStateForTwoPhaseTMR, insetExperimentStateForTwoPhaseTMR } from "../util/index"
 
-const TwoPhaseTMRDashboard = ({AppBeTest, isRandomData, setTPTMRexcutedNumsComp}: any) => {
+const TwoPhaseTMRDashboard = ({AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp}: any) => {
     const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
     
     // const [storageState, setStorageState] = useState(TwoPhaseTMRIntialState.storages)
@@ -38,7 +38,7 @@ const TwoPhaseTMRDashboard = ({AppBeTest, isRandomData, setTPTMRexcutedNumsComp}
                 />
               ))}
             </div>
-            <button className="border border-gray-200 py-2 px-4 rounded" onClick={() => TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsComp)}>Start Experiment</button>
+            <button className="border border-gray-200 py-2 px-4 rounded" onClick={() => TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp)}>Start Experiment</button>
             
           </DashboardContainer>
         </div>

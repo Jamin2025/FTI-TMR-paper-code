@@ -2,7 +2,7 @@
 import {useRef, useEffect, useLayoutEffect} from "react"
 import {Graph} from "../alogrithms/util/graphType"
 import * as echarts from "echarts"
-function run(_rawData: any, myChart: any, title: string) {
+function run(_rawData: any, myChart: any, title: string, Y: string) {
 
   const methods = [
     'C-TMR',
@@ -21,7 +21,7 @@ function run(_rawData: any, myChart: any, title: string) {
         type: 'filter',
         config: {
           and: [
-            { dimension: 'Excuted Tasks Num', gte: 0 },
+            { dimension: Y , gte: 0 },
             { dimension: 'Method', '=': method }
           ]
         }
@@ -46,10 +46,10 @@ function run(_rawData: any, myChart: any, title: string) {
       },
       encode: {
         x: 'Orginal Tasks Num',
-        y: 'Excuted Tasks Num',
-        label: ['Excuted Tasks Num', 'Orginal Tasks Num'],
-        itemName: 'Excuted Tasks Num',
-        tooltip: ['Excuted Tasks Num']
+        y: Y,
+        label: [Y, 'Orginal Tasks Num'],
+        itemName: Y,
+        tooltip: [Y]
       }
     });
   });
@@ -77,7 +77,7 @@ function run(_rawData: any, myChart: any, title: string) {
       nameGap: 30,
     },
     yAxis: {
-      name: 'Excuted Tasks Num'
+      name: Y
     },
     grid: {
       right: 140
@@ -99,8 +99,8 @@ const ExperimentCompare = ({taskNumExperimentData, taskPofExperimentData}: {task
         // Specify the configuration items and data for the chart
 
         // Display the chart using the configuration items and data just specified.
-        run(taskNumExperimentData, myChart, "Excuted Task Num Comparison");
-        run(taskPofExperimentData || [], pofChart, "Pof Comparison")
+        run(taskNumExperimentData, myChart, "Excuted Task Num Comparison", "Excuted Tasks Num");
+        run(taskPofExperimentData || [], pofChart, "PoF Comparison", "PoF")
         /**
          * experimentData [["Orginal Tasks Num", "Excuted Tasks Num", "Method"]]
          * 

@@ -11,7 +11,7 @@ import StatusInfoBar from "./StatusInfoBar";
 
 
 
-const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp}: any) => {
+const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, setTPTDTMRexcutedPofComp}: any) => {
     const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
     const [experimentStates, setExperimentStates] = useState([0,0,0,0,0])
     const [STs, setSTs] = useState(new Array(ClusterNumber).fill(0))
@@ -31,7 +31,7 @@ const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp}: 
 
     function startExperiment() {
       // 让统计数据最后出来。
-      hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp)
+      hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, setTPTDTMRexcutedPofComp)
       console.log("start experiment")
     }
 

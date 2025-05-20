@@ -85,7 +85,7 @@ class NodeClusterTMR extends Node_ {
                 newState[4] = newState[3] / newState[0]
                 return newState
             })
-            typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(3)
+            typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(1, 3, finalRes)
             return [finalRes]
         } else {
             setExperimentStateForClusterTMR((prevState) => {
@@ -97,7 +97,7 @@ class NodeClusterTMR extends Node_ {
                 newState[4] = newState[3] / newState[0]
                 return newState
             })
-            typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(2)
+            typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(1, 2, primaryRes)
             return [primaryRes]
         }
     }
@@ -145,7 +145,7 @@ class NodeClusterTMR extends Node_ {
                     newState[4] = newState[3] / newState[0]
                     return newState
                 })
-                if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(3)
+                if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 3, finalRes)
                 return finalRes
             } else {
                 // only two phase，没多余的内核使用了
@@ -167,7 +167,7 @@ class NodeClusterTMR extends Node_ {
                         newState[4] = newState[3] / newState[0]
                         return newState
                     })
-                    if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(3)
+                    if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 3, finalRes)
                     return finalRes
                 } catch (error) {
                     console.error(error, result, c)
@@ -192,7 +192,7 @@ class NodeClusterTMR extends Node_ {
                 newState[4] = newState[3] / newState[0]
                 return newState
             })
-            if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(2)
+            if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 2, finalRes)
         //    console.log("Node Id: ", this.NodeID, " fullCalCores: ", two_FreeCores)
             return finalRes
         }

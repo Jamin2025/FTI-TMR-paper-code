@@ -7,20 +7,23 @@ import { TMR, hybirdFT_FD_InitialCoreState, ClusterNumber } from "../alogrithms/
 // import LJFSchedule from "../alogrithms/listSchedule"
 import { insetCoreStateForTMR, insetExperimentStateForTMR } from "../util/index"
 
-const TMRDashboard = ({AppBeTest, isRandomData, setTMRExcutedNumsComp}: any) => {
+const TMRDashboard = ({AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp}: any) => {
     
   const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
   const [experimentStates, setExperimentStatesForTMR] = useState([0, 0, 0, 0, 0])
-  const excutedNumsComp = useRef<any[]>([])
   
     
     // 注册保存一下方法 
     // register and save the method
     useEffect(() => {
-        insetCoreStateForTMR(setCoresState)
-        insetExperimentStateForTMR(setExperimentStatesForTMR)
+      insetCoreStateForTMR(setCoresState)
+      insetExperimentStateForTMR(setExperimentStatesForTMR)
         // TMR()
     }, [])
+
+    function startTMRExperiment() {
+      TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp)
+    }
 
     return (
       <div className="flex w-full justify-around">
@@ -37,7 +40,7 @@ const TMRDashboard = ({AppBeTest, isRandomData, setTMRExcutedNumsComp}: any) => 
                 />
               ))}
             </div>
-            <button className="border border-gray-200 py-2 px-4 rounded" onClick={() => TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp)}>Start Experiment</button>
+            <button className="border border-gray-200 py-2 px-4 rounded" onClick={startTMRExperiment}>Start Experiment</button>
             
           </DashboardContainer>
         </div>

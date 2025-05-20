@@ -28,6 +28,11 @@ export default function Home() {
   const [RTMRexcutedNumsComp, setRTMRexcutedNumsComp] = useState([])
   const [TPTDTMRDexcutedNumsComp, setTPTDTMRexcutedNumsComp] = useState([])
 
+  const [TMRexcutedPofComp, setTMRExcutedPofComp] = useState([])
+  const [TPTMRexcutedPofComp, setTPTMRexcutedPofComp] = useState([])
+  const [RTMRexcutedPofComp, setRTMRexcutedPofComp] = useState([])
+  const [TPTDTMRDexcutedPofComp, setTPTDTMRexcutedPofComp] = useState([])
+
 
   // 建立四个pof
 
@@ -35,15 +40,17 @@ export default function Home() {
 
   const taskNumExperimentData = useMemo(() => {
     const D: any[] = TMRexcutedNumsComp.concat(TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp).sort((a, b) => a[0] - b[0])
-    if (TPTDTMRDexcutedNumsComp.length > 8000) console.log(TPTDTMRDexcutedNumsComp[TPTDTMRDexcutedNumsComp.length - 1])
+    if (TPTDTMRDexcutedNumsComp.length > 1000) console.log(TPTDTMRDexcutedNumsComp[TPTDTMRDexcutedNumsComp.length - 1])
     console.warn = () => null
     D.unshift(["Orginal Tasks Num", "Excuted Tasks Num", "Method"])
     return D
   }, [TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp])
 
   const taskPofExperimentData = useMemo(() => {
-    return [["Orginal Tasks Num", "Excuted Tasks Num", "Method"]]
-  }, [])
+    const D: any[] = TMRexcutedPofComp.concat(TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp).sort((a, b) => a[0] - b[0])
+    D.unshift(["Orginal Tasks Num", "PoF", "Method"])
+    return D
+  }, [TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp])
  
   // 创建多个状态，最后合并一起，归并排序
   const AppBeTest = isRandomData ? randomTask  : graphData;
@@ -61,14 +68,33 @@ export default function Home() {
       <div className="pl-[10%] pt-20">
         <StatusInfoBar />
       </div>
-      <TMRDashboard AppBeTest={AppBeTest} isRandomData={isRandomData} setTMRExcutedNumsComp={setTMRExcutedNumsComp}/>
+      <TMRDashboard
+        AppBeTest={AppBeTest}
+        isRandomData={isRandomData}
+        setTMRExcutedNumsComp={setTMRExcutedNumsComp}
+        setTMRExcutedPofComp={setTMRExcutedPofComp}
+      />
       <div className="border-t-2 border-gray-200 mt-10"></div>
-      <TwoPhaseTMRDashboard AppBeTest={AppBeTest} isRandomData={isRandomData} setTPTMRexcutedNumsComp={setTPTMRexcutedNumsComp}/>
+      <TwoPhaseTMRDashboard
+        AppBeTest={AppBeTest}
+        isRandomData={isRandomData}
+        setTPTMRexcutedNumsComp={setTPTMRexcutedNumsComp}
+        setTPTMRexcutedPofComp={setTPTMRexcutedPofComp}
+      />
       <div className="border-t-2 border-gray-200 mt-10"></div>
-      <ReactiveTMRDashboard AppBeTest={AppBeTest} isRandomData={isRandomData} setRTMRexcutedNumsComp={setRTMRexcutedNumsComp}/>
+      <ReactiveTMRDashboard
+        AppBeTest={AppBeTest}
+        isRandomData={isRandomData}
+        setRTMRexcutedNumsComp={setRTMRexcutedNumsComp}
+        setRTMRexcutedPofComp={setRTMRexcutedPofComp}
+      />
       <div className="border-t-2 border-gray-200 mt-10"></div>
-      
-      <ClusterDashboard AppBeTest={AppBeTest} isRandomData={isRandomData} setTPTDTMRexcutedNumsComp={setTPTDTMRexcutedNumsComp} />
+      <ClusterDashboard
+        AppBeTest={AppBeTest}
+        isRandomData={isRandomData}
+        setTPTDTMRexcutedNumsComp={setTPTDTMRexcutedNumsComp}
+        setTPTDTMRexcutedPofComp={setTPTDTMRexcutedPofComp}
+      />
       <div className="border-t-2 border-gray-200 mt-10"></div>
       <ExperimentCompare
         taskNumExperimentData={taskNumExperimentData}
