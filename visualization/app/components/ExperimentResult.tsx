@@ -9,7 +9,7 @@ const ExperimentResult = ({experimentStates}: {experimentStates: number[]}) => {
       <ExperimentRow>Executed task: {experimentStates[1]}</ExperimentRow>
       <ExperimentRow>Correct result: {experimentStates[2]}</ExperimentRow>
       <ExperimentRow>Faulty result: {experimentStates[3]}</ExperimentRow>
-      <ExperimentRow>PoF: {experimentStates[4].toFixed(4)}</ExperimentRow>
+      <ExperimentRow>PoF: {experimentStates[4]}</ExperimentRow>
     </DashboardContainer>
   )
 }

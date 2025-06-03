@@ -3,6 +3,7 @@ export interface GraphNode {
     complete: boolean;
     predecessors: number[];
     predecessornums: number;
+    id: number;
 }
 
 export type Graph = GraphNode[]

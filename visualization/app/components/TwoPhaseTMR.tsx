@@ -9,19 +9,7 @@ import { insetCoreStateForTwoPhaseTMR, insetExperimentStateForTwoPhaseTMR } from
 const TwoPhaseTMRDashboard = ({AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp}: any) => {
     const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
     
-    // const [storageState, setStorageState] = useState(TwoPhaseTMRIntialState.storages)
-    
-    const [experimentStates, setExperimentStateForTMR] = useState([0, 0, 0, 0, 0])
-    
-    // 注册保存一下方法 
-    // register and save the method
-    useEffect(() => {
-        insetCoreStateForTwoPhaseTMR(setCoresState)
-        // insetStorageStateForTwoPhaseTMR(setStorageState)
-        insetExperimentStateForTwoPhaseTMR(setExperimentStateForTMR)
-        
-        // // TMR()
-    }, [])
+    const [experimentStates, setExperimentStateForTwoPhaseTMR] = useState([0, 0, 0, 0, 0])
 
     return (
         <div className="flex w-full justify-around">
@@ -38,7 +26,7 @@ const TwoPhaseTMRDashboard = ({AppBeTest, isRandomData, setTPTMRexcutedNumsComp,
                 />
               ))}
             </div>
-            <button className="border border-gray-200 py-2 px-4 rounded" onClick={() => TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp)}>Start Experiment</button>
+            <button className="border border-gray-200 py-2 px-4 rounded" onClick={() => TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp, setCoresState, setExperimentStateForTwoPhaseTMR)}>Start Experiment</button>
             
           </DashboardContainer>
         </div>

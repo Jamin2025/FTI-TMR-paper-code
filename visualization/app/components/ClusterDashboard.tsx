@@ -21,18 +21,22 @@ const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, s
     const [threeLeaderNode, setThreeLeaderNode] = useState<number[]>([-1, -1, -1])
     const [leaderCore, setLeaderCore] = useState<any>({})
 
-    useEffect(() => {
-      insetCoreStateForClusterTMR(setCoresState)
-      insetExperimentStateForClusterTMR(setExperimentStates)
-      insetCoresDisabledForClusterTMR(setCoresDisabled)
-      insetSTForClusterTMR(setSTs)
-      insetLeaderForClusterTMR(setThreeLeaderNode)
-    }, [])
+    // useEffect(() => {
+    //   insetCoreStateForClusterTMR(setCoresState)
+    //   insetExperimentStateForClusterTMR(setExperimentStates)
+    //   insetCoresDisabledForClusterTMR(setCoresDisabled)
+    //   insetSTForClusterTMR(setSTs)
+    //   insetLeaderForClusterTMR(setThreeLeaderNode)
+    // }, [])
 
     function startExperiment() {
       // 让统计数据最后出来。
-      hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, setTPTDTMRexcutedPofComp)
-      console.log("start experiment")
+      hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, 
+        setTPTDTMRexcutedNumsComp, setTPTDTMRexcutedPofComp,
+        setExperimentStates, setCoresState, 
+        setCoresDisabled, setSTs, 
+        setThreeLeaderNode
+      )
     }
 
     return (
@@ -62,8 +66,8 @@ const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, s
             <ExperimentRow>Executed task: {experimentStates[1]}</ExperimentRow>
             <ExperimentRow>Correct result: {experimentStates[2]}</ExperimentRow>
             <ExperimentRow>Faulty result: {experimentStates[3]}</ExperimentRow>
-            <ExperimentRow>PoF: {experimentStates[4].toFixed(4)}</ExperimentRow>
-            <ExperimentRow>ST: {STs.map(i => i.toFixed(4)).join(" ")}</ExperimentRow>
+            <ExperimentRow>PoF: {experimentStates[4]}</ExperimentRow>
+            <ExperimentRow>ST: {STs.map(item => item.toFixed(4)).join(" ")}</ExperimentRow>
             <ExperimentRow>Leader: {threeLeaderNode.map(a => a == -1 ? null : a + 1).join(", ")}</ExperimentRow>
       </DashboardContainer>
       </div>

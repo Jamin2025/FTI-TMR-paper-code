@@ -25,7 +25,6 @@ const k = 0; // 发生次数
 // T 为time length of the task
 function calProbability(T) {
   const probability = 1 - poisson(lambda * T, k);
-  // console.log(probability)
   return probability;
 }
 

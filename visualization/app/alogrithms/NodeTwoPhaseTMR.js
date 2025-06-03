@@ -1,62 +1,55 @@
 const Node_ = require('./Node_')
 
-const {
-    setExperimentStateForTwoPhaseTMR,
-} = require("../util")
 
 class NodeTwoPhaseTMR extends Node_ {
-    constructor(NodeID) {
-        super(1, NodeID)
+    constructor(NodeID, startExec, endExec) {
+        super(NodeID, startExec, endExec)
     }
 
-    async runWithTwoPhaseTMR(App, funAfterExecuteEachTask) {
+    async auxTwoPhaseTMR(a, b, task, funAfterExecuteEachTask) {
+        return Promise.all([a, b]).then(async (result) => {
+            const primaryRes = Node_.FT.TPTMR_Primary(...result)
+            if (primaryRes == "TPTMPnoPass") {
+                try {
+                    const [ c ] = this.executeTask(task)
+                    const cres = await c;
+                    const res = Node_.FT.TMR(...result, cres)
+                    if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 3, res)
+                    return res
+                } catch (error) {
+                    // console.log(error)
+                }
+            // 主阶段通过
+            } else {
+                const res = result[0]
+                if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 2, res)
+                return res
+            }
+        })
+    }
+
+    async runWithTwoPhaseTMRForRandom(App, funAfterExecuteEachTask) {
+        this.switchScheduleMode(Node_.mode_FCFS)
         const res = []
         const AppLen = App.length;
         for(let i = 0; i < AppLen; i++) {
             let task = App[i]
-            const [ a ] = await this.executeTask(task)
-            const [ b ] = await this.executeTask(task)
+            const [ a ] = this.executeTask({...task})
+            const [ b ] = this.executeTask({...task})
             // 投票异步防止阻塞
-            const finalPromise = Promise.all([a, b]).then(async (result) => {
-                const primaryRes = Node_.FT.TPTMR_Primary(...result)
-                if (primaryRes == "TPTMPnoPass") {
-                    try {
-                        const [ c ] = await this.executeTask(task)
-                        const cres = await c;
-                        const res = Node_.FT.TMR(...result, cres)
-                        setExperimentStateForTwoPhaseTMR((prev) => {
-                            const news = [...prev]
-                            news[0] += 1
-                            news[1] += 3
-                            if (res !== 0.5) news[3] += 1
-                            else news[2] += 1
-                            news[4] = news[3] / news[0]
-                            return news
-                        })
-                        if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 3, res)
-                        return res
-                    } catch (error) {
-                        // console.log(error)
-                    }
-                // 主阶段通过
-                } else {
-                    const res = result[0]
-                    setExperimentStateForTwoPhaseTMR((prev) => {
-                        const news = [...prev]
-                        news[0] += 1
-                        news[1] += 2
-                        if (res !== 0.5) news[3] += 1
-                        else news[2] += 1
-                        news[4] = news[3] / news[0]
-                        return news
-                    })
-                    if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 2, res)
-                    return res
-                }
-            })
-            res.push(finalPromise)
+            res.push(this.auxTwoPhaseTMR(a, b, {...task}, funAfterExecuteEachTask))
         }
         return Promise.all(res)
+    }
+
+    async runWithTwoPhaseTMRForGraph(App, funAfterExecuteEachTask) {
+        this.switchScheduleMode(Node_.mode_LTF)
+        return this.graphAppShedule(App, (task) => {
+            const [ a ] = this.executeTask({...task})
+            const [ b ] = this.executeTask({...task})
+            const vote = this.auxTwoPhaseTMR(a, b, {...task}, funAfterExecuteEachTask)
+            return vote
+        })
     }
 }
 

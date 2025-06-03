@@ -1,10 +1,4 @@
 const Node_ = require('./Node_')
-const { coreNums } = require('./Core')
-const { 
-    setExperimentStateForReactiveTMR,
-    deactiveCoresForReactiveTMR,
-    activeCoresForReactiveTMR,
-} = require("../util")
 
 class NodeReactiveTMR extends Node_ {
 
@@ -31,16 +25,19 @@ class NodeReactiveTMR extends Node_ {
     // stores the history of faults (again, either transient or permanent) that have occurred in the prior frames.
     historyArr = [[], [], [], []]
 
-    constructor(NodeID) {
-        super(2, NodeID)
-    }
-
-    activeCore(core) {
-        const success = this.brokenCores.delete(core)
-        if (!success) throw new Error("activeCore error: " + core)
-        activeCoresForReactiveTMR(core, this.NodeID)
-        this.cores[core].active()
-        // console.log("active core: ", core)
+    constructor(NodeID, startExec, endExec, disableCore) {
+        super(NodeID, startExec, endExec)
+        this.activeCore = (coreID) => {
+            const success = this.brokenCores.delete(coreID)
+            if(!success) throw new Error("activeCore error: " + coreID)
+            this.cores[coreID].active()
+            disableCore(coreID, false)
+        }
+        this.deactiveCore = (coreID) => {
+            this.brokenCores.add(coreID)
+            this.cores[coreID].deactiveCore()
+            disableCore(coreID, true)
+        }
     }
 
     addInSideTasks(taskID, core, round) {
@@ -57,11 +54,7 @@ class NodeReactiveTMR extends Node_ {
         return this.sideTasks[core].size
     }
 
-    deactiveCore(core) {
-        this.brokenCores.add(core)
-        deactiveCoresForReactiveTMR(core, this.NodeID)
-        this.cores[core].deactiveCore()
-    }
+    
 
     // 一次round结束后复制一下bit arr并检查
     R_TMR_roundEnd(round) {
@@ -86,7 +79,20 @@ class NodeReactiveTMR extends Node_ {
         // console.log("broken cores: ", this.brokenCores)
     }
 
-    async runWithReactiveTMR(App, funAfterExecuteEachTask) {
+    auxReactiveTMR (task, funAfterExecuteEachTask, round) {
+        const {callCores: two_FreeCores, callArr, noMoreCore} = this.runOnDistinctCores(2, this.brokenCores, task)
+        // 不使用await 异步 防止计算阻塞内核分配
+        return this.ReactiveTMR(task, {
+            two_FreeCores,
+            callArr,
+            noMoreCore
+        }, funAfterExecuteEachTask).then(res => {
+            this.tryReactiveCore(task, res, round, funAfterExecuteEachTask)
+            return res
+        })
+    }
+
+    setAppID(App) {
         let AppRecord = this.AppRecord.find(v => v.pid == App.pid)
         if (AppRecord === undefined) {
             AppRecord = {
@@ -97,27 +103,34 @@ class NodeReactiveTMR extends Node_ {
         } else {
             AppRecord.round++
         }
+        return AppRecord
+    }
+
+
+    async runWithReactiveTMRForRandom(App, funAfterExecuteEachTask) {
+        const AppRecord = this.setAppID(App)
+        this.switchScheduleMode(Node_.mode_FCFS)
         const res = []
         for(let i = 0; i < App.length; i++) {
             let task = App[i]
-            // 等待每次内核分配完后再计算
-            const {freeCores: two_FreeCores, callArr, noMoreCore} = await this.runOnDistinctFreeCores(2, this.brokenCores, task).catch(err => {
-                if (err == "no more distinct core") return {freeCores: [], callArr: [], noMoreCore: true}
-                else throw new Error(err);
-            })
-            // 不使用await 异步 防止计算阻塞内核分配
-            const majorityVoteRes = this.ReactiveTMR(task, {
-                two_FreeCores,
-                callArr,
-                noMoreCore
-            }, funAfterExecuteEachTask).then(res => {
-                this.tryReactiveCore(task, res, AppRecord.round, funAfterExecuteEachTask)
-                return res
-            })
-            
-            res.push(majorityVoteRes)
+            // 等待每次内核分配完后再等计算结果，防止阻塞
+            res.push(this.auxReactiveTMR(task, funAfterExecuteEachTask, AppRecord.round))
         }
         const finalRes = await Promise.all(res)
+        this.R_TMR_roundEnd(AppRecord.round)
+        return finalRes
+    }
+
+    async runWithReactiveTMRForGraph(App, funAfterExecuteEachTask) {
+        const AppRecord = this.setAppID(App)
+        this.switchScheduleMode(Node_.mode_LTF)
+        const res = []
+        res.push(
+            this.graphAppShedule(App, (task) => {
+                return this.auxReactiveTMR(task, funAfterExecuteEachTask, AppRecord.round)
+            })
+        )
+        const finalRes = Promise.all(res)
         this.R_TMR_roundEnd(AppRecord.round)
         return finalRes
     }
@@ -130,12 +143,7 @@ class NodeReactiveTMR extends Node_ {
                 const brokenCore = brokenCores[i]
                 // 判断该轮次是否需要比较
                 if (!this.checkIfCompareRound(taskID, brokenCore, round)) return
-                const tryRes = await this.cores[brokenCore].curCalculate.then(() => this.cores[brokenCore].calculate(task))
-                setExperimentStateForReactiveTMR((prevState) => {
-                    const newState = [...prevState]
-                    newState[1] += 1
-                    return newState
-                })
+                const tryRes = await this.cores[brokenCore].calculate({...task})
                 typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(0, 1, 0.5)
                 if (tryRes === majorityVoteRes) {
                     if (this.removeInSideTasks(brokenCore, taskID) === 0) {
@@ -180,18 +188,11 @@ class NodeReactiveTMR extends Node_ {
     }
 
     async runWithOutBrokenCore(task) {
-        if (this.brokenCores.size === coreNums) throw new Error("no more regular cores to used");
+        if (this.brokenCores.size === 4) throw new Error("no more regular cores to used");
         return new Promise((resolve) => {
-            let isCalculated = false
-            for (let i = 0; i < 4; i++) {
-                if (!this.brokenCores.has(i)) {   
-                    this.cores[i].curCalculate.then(() => {
-                        if (isCalculated) return null
-                        isCalculated = true
-                        resolve([this.cores[i].calculate(task), i])
-                    })
-                }
-            }
+            // 最空闲内核优先调度
+            const filterCores = this.getSortedCoresByLoad().filter((item) => !this.brokenCores.has(item.id));
+            resolve([filterCores[0].calculate({...task}), filterCores[0].id])
         })
     }
 
@@ -203,27 +204,9 @@ class NodeReactiveTMR extends Node_ {
             
             const [res3] = await this.runWithOutBrokenCore(task)
             const finalRes = Node_.FT.TMR(res1, res2, await res3)
-            setExperimentStateForReactiveTMR((prevState) => {
-                const newState = [...prevState]
-                newState[0] += 1
-                newState[1] += 3
-                if (finalRes !== 0.5) newState[3] += 1
-                else newState[2] += 1
-                newState[4] = newState[3] / newState[0]
-                return newState
-            })
             typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(1, 3, finalRes)
             return [finalRes]
         } else {
-            setExperimentStateForReactiveTMR((prevState) => {
-                const newState = [...prevState]
-                newState[0] += 1
-                newState[1] += 2
-                if (primaryRes !== 0.5) newState[3] += 1
-                else newState[2] += 1
-                newState[4] = newState[3] / newState[0]
-                return newState
-            })
             typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(1, 2, primaryRes)
             return [primaryRes]
         }
@@ -232,9 +215,6 @@ class NodeReactiveTMR extends Node_ {
 
     async ReactiveTMR(task, params, funAfterExecuteEachTask) {
         // 获取两个空闲内核, 三次任务在不同内核上计算。
-        /**
-         *@todo 直接计算，防止多次在同个内核组上计算 
-         */
        
         const {two_FreeCores, callArr, noMoreCore} = params
         if (noMoreCore) {
@@ -246,6 +226,7 @@ class NodeReactiveTMR extends Node_ {
         const primaryRes = Node_.FT.TPTMR_Primary(...result)
         // 双阶段多模冗余按需阶段
         if (primaryRes == "TPTMPnoPass") {
+            // 没通过
             /**
              * @tip
              * 按照论文 Energy-Efficient Permanent Fault Tolerance in Hard Real-Time Systems 算法
@@ -253,7 +234,7 @@ class NodeReactiveTMR extends Node_ {
              */
             if (this.brokenCores.size < 2) {
                 const excludeCore =  new Set([...two_FreeCores, ...this.brokenCores])
-                const {freeCores: lastCore, callArr: lastCallRes} = await this.runOnDistinctFreeCores(1, excludeCore, task)
+                const {callCores: lastCore, callArr: lastCallRes} = this.runOnDistinctCores(1, excludeCore, task)
                 // 重新计算一次
                 const c = await lastCallRes[0]
                 const fullcalCores = [...two_FreeCores, ...lastCore]
@@ -264,15 +245,6 @@ class NodeReactiveTMR extends Node_ {
                     const { flagArr } = this
                     flagArr[faultCore][task.id] = 1
                 }
-                setExperimentStateForReactiveTMR((prevState) => {
-                    const newState = [...prevState]
-                    newState[0] += 1
-                    newState[1] += 3
-                    if (finalRes !== 0.5) newState[3] += 1
-                    else newState[2] += 1
-                    newState[4] = newState[3] / newState[0]
-                    return newState
-                })
                 if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 3, finalRes)
                 return finalRes
             } else {
@@ -286,15 +258,6 @@ class NodeReactiveTMR extends Node_ {
                         const { flagArr } = this
                         flagArr[faultCore][task.id] = 1
                     }
-                    setExperimentStateForReactiveTMR((prevState) => {
-                        const newState = [...prevState]
-                        newState[0] += 1
-                        newState[1] += 3
-                        if (finalRes !== 0.5) newState[3] += 1
-                        else newState[2] += 1
-                        newState[4] = newState[3] / newState[0]
-                        return newState
-                    })
                     if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 3, finalRes)
                     return finalRes
                 } catch (error) {
@@ -304,15 +267,6 @@ class NodeReactiveTMR extends Node_ {
         // 主阶段通过
         } else {
             const finalRes = result[0]
-            setExperimentStateForReactiveTMR((prevState) => {
-                const newState = [...prevState]
-                newState[0] += 1
-                newState[1] += 2
-                if (finalRes !== 0.5) newState[3] += 1
-                else newState[2] += 1
-                newState[4] = newState[3] / newState[0]
-                return newState
-            })
             if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 2, finalRes)
             // console.log("fullCalCores: ", two_FreeCores)
             return finalRes

@@ -15,14 +15,14 @@ const TMRDashboard = ({AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExc
     
     // 注册保存一下方法 
     // register and save the method
-    useEffect(() => {
-      insetCoreStateForTMR(setCoresState)
-      insetExperimentStateForTMR(setExperimentStatesForTMR)
-        // TMR()
-    }, [])
+    // useEffect(() => {
+    //   insetCoreStateForTMR(setCoresState)
+    //   insetExperimentStateForTMR(setExperimentStatesForTMR)
+    //     // TMR()
+    // }, [])
 
     function startTMRExperiment() {
-      TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp)
+      TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp, setCoresState, setExperimentStatesForTMR)
     }
 
     return (

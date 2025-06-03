@@ -1,10 +1,5 @@
 const Node_ = require('./Node_')
-const { 
-    setExperimentStateForClusterTMR,
-    setSTForClusterTMR,
-    deactiveCoresForClusterTMR,
-    activeCoresForClusterTMR
-} = require("../util")
+
 class NodeClusterTMR extends Node_ {
 
     // 争议任务，用于cluster比较
@@ -14,9 +9,21 @@ class NodeClusterTMR extends Node_ {
     brokenCores = new Set()
 
     brokeCoresCheckingCycle = new Map()
+    // @TODO 修改加入一些核心的状态修改等等操作
+    constructor(NodeID, startExec, endExec, disableCore) {
+        super(NodeID, startExec, endExec)
 
-    constructor(NodeID) {
-        super(3, NodeID)
+        this.activeCore = (coreID) => {
+            const success = this.brokenCores.delete(coreID)
+            if(!success) throw new Error("activeCore error: " + coreID)
+            this.cores[coreID].active()
+            disableCore(coreID, false)
+        }
+        this.deactiveCore = (coreID) => {
+            this.brokenCores.add(coreID)
+            this.cores[coreID].deactiveCore()
+            disableCore(coreID, true)
+        }
     }
 
     ST = 0
@@ -25,7 +32,7 @@ class NodeClusterTMR extends Node_ {
     executeTaskCount = 0
 
     getLeaderCore() {
-        if (!this.hasAvaliableCore()) throw new Error("this leader doesn't have any hasAvaliable core to be used")
+        if (!this.hasAvaliableCore()) throw new Error("this leader doesn't have any avaliable core to be used")
         const coresWithConflictCount = this.conflictTasks.map((set, core) => [set.size, core]).sort((a, b) => a[0] - b[0])
         const filterBroken = coresWithConflictCount.filter((a) => !this.brokenCores.has(a[1]))
         return filterBroken[0][1]
@@ -35,36 +42,16 @@ class NodeClusterTMR extends Node_ {
         return this.brokenCores.size !== 4
     }
 
-    deactiveCore(core) {
-        this.brokenCores.add(core)
-        deactiveCoresForClusterTMR(this.NodeID, core)
-        this.cores[core].deactiveCore()
-    }
-
     updateBrokenCoreCheckingCycle(core, cycle) {
         this.brokeCoresCheckingCycle.set(core, cycle)
-    }
-
-    activeCore(core) {
-        this.brokenCores.delete(core)
-        activeCoresForClusterTMR(this.NodeID, core)
-        this.brokeCoresCheckingCycle.delete(core)
-        this.cores[core].active()
     }
 
     async runWithOutBrokenCore(task) {
         if (this.brokenCores.size === 4) throw new Error("no more regular cores to used");
         return new Promise((resolve) => {
-            let isCalculated = false
-            for (let i = 0; i < 4; i++) {
-                if (!this.brokenCores.has(i)) {   
-                    this.cores[i].curCalculate.then(() => {
-                        if (isCalculated) return null
-                        isCalculated = true
-                        resolve([this.cores[i].calculate(task), i])
-                    })
-                }
-            }
+            // 最空闲内核优先调度
+            const filterCores = this.getSortedCoresByLoad().filter((item) => !this.brokenCores.has(item.id));
+            resolve([filterCores[0].calculate({...task}), filterCores[0].id])
         })
     }
 
@@ -76,27 +63,9 @@ class NodeClusterTMR extends Node_ {
             
             const [res3] = await this.runWithOutBrokenCore(task)
             const finalRes = Node_.FT.TMR(res1, res2, await res3)
-            setExperimentStateForClusterTMR((prevState) => {
-                const newState = [...prevState]
-                newState[0] += 1
-                newState[1] += 3
-                if (finalRes !== 0.5) newState[3] += 1
-                else newState[2] += 1
-                newState[4] = newState[3] / newState[0]
-                return newState
-            })
             typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(1, 3, finalRes)
             return [finalRes]
         } else {
-            setExperimentStateForClusterTMR((prevState) => {
-                const newState = [...prevState]
-                newState[0] += 1
-                newState[1] += 2
-                if (primaryRes !== 0.5) newState[3] += 1
-                else newState[2] += 1
-                newState[4] = newState[3] / newState[0]
-                return newState
-            })
             typeof funAfterExecuteEachTask === "function" && funAfterExecuteEachTask(1, 2, primaryRes)
             return [primaryRes]
         }
@@ -117,14 +86,10 @@ class NodeClusterTMR extends Node_ {
             this.executeTaskCount += 3
             this.conflictCount += 1
             this.ST = 1 - this.conflictCount / this.executeTaskCount
-            setSTForClusterTMR((prevState) => {
-                const newState = [...prevState]
-                newState[this.NodeID] = this.ST
-                return newState
-            })
+
             if (this.brokenCores.size < 2) {
                 const excludeCore = new Set([...two_FreeCores, ...this.brokenCores])
-                const {freeCores: lastCore, callArr: lastCallRes} = await this.runOnDistinctFreeCores(1, excludeCore, task)
+                const {callCores: lastCore, callArr: lastCallRes} = this.runOnDistinctCores(1, excludeCore, task)
                 // 重新计算一次
                 const c = await lastCallRes[0]
                 const fullcalCores = [...two_FreeCores, ...lastCore]
@@ -135,16 +100,6 @@ class NodeClusterTMR extends Node_ {
                 } else {
                     this.conflictTasks[failedCores].add(task.id)
                 }
-                
-                setExperimentStateForClusterTMR((prevState) => {
-                    const newState = [...prevState]
-                    newState[0] += 1
-                    newState[1] += 3
-                    if (finalRes !== 0.5) newState[3] += 1
-                    else newState[2] += 1
-                    newState[4] = newState[3] / newState[0]
-                    return newState
-                })
                 if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 3, finalRes)
                 return finalRes
             } else {
@@ -158,15 +113,6 @@ class NodeClusterTMR extends Node_ {
                     } else {
                         this.conflictTasks[failedCores].add(task.id)
                     }
-                    setExperimentStateForClusterTMR((prevState) => {
-                        const newState = [...prevState]
-                        newState[0] += 1
-                        newState[1] += 3
-                        if (finalRes !== 0.5) newState[3] += 1
-                        else newState[2] += 1
-                        newState[4] = newState[3] / newState[0]
-                        return newState
-                    })
                     if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 3, finalRes)
                     return finalRes
                 } catch (error) {
@@ -177,36 +123,20 @@ class NodeClusterTMR extends Node_ {
         } else {
             this.executeTaskCount += 2
             this.ST = 1 - this.conflictCount / this.executeTaskCount
-            setSTForClusterTMR((prevState) => {
-                const newState = [...prevState]
-                newState[this.NodeID] = this.ST
-                return newState
-            })
             const finalRes = result[0]
-            setExperimentStateForClusterTMR((prevState) => {
-                const newState = [...prevState]
-                newState[0] += 1
-                newState[1] += 2
-                if (finalRes !== 0.5) newState[3] += 1
-                else newState[2] += 1
-                newState[4] = newState[3] / newState[0]
-                return newState
-            })
             if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 2, finalRes)
         //    console.log("Node Id: ", this.NodeID, " fullCalCores: ", two_FreeCores)
             return finalRes
         }
     }
 
-    async runWithTwoPhaseTMRForDistinctCore(App, funAfterExecuteEachTask) {
+    async runWithTwoPhaseTMRForRandomData(App, funAfterExecuteEachTask) {
+        this.switchScheduleMode(Node_.mode_FCFS)
         const res = []
         for(let i = 0; i < App.length; i++) {
             let task = App[i]
             // 等待每次内核分配完后再计算, callArr是Promise
-            const {freeCores: two_FreeCores, callArr, noMoreCore} = await this.runOnDistinctFreeCores(2, this.brokenCores, task).catch(err => {
-                if (err == "no more distinct core") return {freeCores: [], callArr: [], noMoreCore: true}
-                else throw new Error(err);
-            })
+            const {callCores: two_FreeCores, callArr, noMoreCore} = this.runOnDistinctCores(2, this.brokenCores, task)
             // 不使用await 异步 防止计算阻塞内核分配
             const majorityVoteRes = this.auxCalFun(task, {
                 two_FreeCores,
@@ -216,6 +146,23 @@ class NodeClusterTMR extends Node_ {
             res.push(majorityVoteRes)
         }
         const finalRes = await Promise.all(res)
+        return finalRes
+    }
+
+    async runWithTwoPhaseTMRForGraphData(App, funAfterExecuteEachTask) {
+        this.switchScheduleMode(Node_.mode_LTF)
+        const finalRes = await this.graphAppShedule(App, (task) => {
+            // 等待每次内核分配完后再计算, callArr是Promise
+            const {callCores: two_FreeCores, callArr, noMoreCore} = this.runOnDistinctCores(2, this.brokenCores, task)
+            // 不使用await 异步 防止计算阻塞内核分配
+            const majorityVoteRes = this.auxCalFun(task, {
+                two_FreeCores,
+                callArr,
+                noMoreCore
+            }, funAfterExecuteEachTask)
+            return majorityVoteRes
+        })
+        console.log(finalRes)
         return finalRes
     }
 }

@@ -16,8 +16,6 @@ function StgToJson(file) {
           if (item[0] == '#') break;
           insertInGraph(taskGraph, item)
       }
-      // console.log(taskGraph)
-      // console.log(topologicalSort(taskGraph, taskGraph.length))
   })
   // 邻接表
   function insertInGraph(taskGraph, item) {

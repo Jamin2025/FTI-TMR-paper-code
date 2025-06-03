@@ -8,7 +8,6 @@ export function coreToBusyForTwoPhaseTMR(id: number, NodeId: number) {
         const newCoreState = [...prevCoreState]
         const cores = [...newCoreState[NodeId]]
         cores[id] = "Busy"
-        // console.log(this.isPermentFault)
         newCoreState[NodeId] = cores
         return newCoreState
     })
@@ -19,7 +18,6 @@ export function coreRestoreForTwoPhaseTMR(id: number, isPermentFault: boolean, N
         const newCoreState = [...prevCoreState]
         const cores = [...newCoreState[NodeId]]
         cores[id] = isPermentFault ? "Broke" : "Idel"
-        // console.log(this.isPermentFault)
         newCoreState[NodeId] = cores
         return newCoreState
     })

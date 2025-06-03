@@ -13,7 +13,7 @@ const DataTypes = ["random", 'robot', 'fpppp', 'sparse']
 
 export default function Home() {
   const [selected, setSelected] = useState(DataTypes[1]);
-  const [taskLen, setTaskLen] = useState('10')
+  const [taskLen, setTaskLen] = useState('3')
   const [graphData, setGraphData] = useState(undefined)
   const isRandomData = selected === "random"
   const randomTask = useMemo(() => isRandomData ? new Array(+taskLen).fill(null).map((_, i) => {
@@ -40,8 +40,6 @@ export default function Home() {
 
   const taskNumExperimentData = useMemo(() => {
     const D: any[] = TMRexcutedNumsComp.concat(TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp).sort((a, b) => a[0] - b[0])
-    if (TPTDTMRDexcutedNumsComp.length > 1000) console.log(TPTDTMRDexcutedNumsComp[TPTDTMRDexcutedNumsComp.length - 1])
-    console.warn = () => null
     D.unshift(["Orginal Tasks Num", "Excuted Tasks Num", "Method"])
     return D
   }, [TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp])

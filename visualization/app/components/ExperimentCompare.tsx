@@ -88,28 +88,51 @@ function run(_rawData: any, myChart: any, title: string, Y: string) {
   myChart.setOption(option);
 }
 
+
 const ExperimentCompare = ({taskNumExperimentData, taskPofExperimentData}: {taskNumExperimentData?: any, taskPofExperimentData: any}) => {
     const chartsRef = useRef<HTMLDivElement>(null);
     const pofChartRef = useRef<HTMLDivElement>(null);
+    const myChart = useRef<any>(null);
+    const pofChart = useRef<any>(null);
+
+    useEffect(() => {
+        if (chartsRef.current) {
+            myChart.current = echarts.init(chartsRef.current);
+            myChart.current.resize();
+            return () => {
+                myChart.current.dispose();
+            }
+        }
+    }
+    , [chartsRef.current]);
+    useEffect(() => {
+        if (pofChartRef.current) {
+            pofChart.current = echarts.init(pofChartRef.current);
+            pofChart.current.resize();
+            return () => {
+                pofChart.current.dispose();
+            }
+        }
+    }
+    , [chartsRef.current]);
     // 
     useEffect(() => {
-        const myChart = echarts.init(chartsRef.current);
-        const pofChart = echarts.init(pofChartRef.current);
+        
          // Initialize the echarts instance based on the prepared dom
         // Specify the configuration items and data for the chart
 
         // Display the chart using the configuration items and data just specified.
-        run(taskNumExperimentData, myChart, "Excuted Task Num Comparison", "Excuted Tasks Num");
-        run(taskPofExperimentData || [], pofChart, "PoF Comparison", "PoF")
+        run(taskNumExperimentData, myChart.current, "Excuted Task Num Comparison", "Excuted Tasks Num");
+        run(taskPofExperimentData || [], pofChart.current, "PoF Comparison", "PoF")
         /**
          * experimentData [["Orginal Tasks Num", "Excuted Tasks Num", "Method"]]
          * 
          *  */ 
 
-    }, [taskNumExperimentData, taskPofExperimentData]);
+    }, [taskNumExperimentData, taskPofExperimentData, myChart.current, pofChart.current]);
     
     return (
-        <div className="flex items-center w-full align-middle ">
+        <div className="flex justify-around items-center py-2">
             <div id="1" style={{width: "600px", height: '400px'}} ref={chartsRef}></div>
             <div id="2" style={{width: "600px", height: '400px'}} ref={pofChartRef}></div>
         </div>
