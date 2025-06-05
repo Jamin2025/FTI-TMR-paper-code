@@ -39,19 +39,18 @@ export default function Home() {
   // 建立四个eachnode alg数据节点
 
   const taskNumExperimentData = useMemo(() => {
-    const D: any[] = TMRexcutedNumsComp.concat(TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp).sort((a, b) => a[0] - b[0])
-    D.unshift(["Orginal Tasks Num", "Excuted Tasks Num", "Method"])
+    const D: any[] = [["Orginal Tasks Num", "Excuted Tasks Num", "Method"]].concat(TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp)
     return D
   }, [TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp])
 
   const taskPofExperimentData = useMemo(() => {
-    const D: any[] = TMRexcutedPofComp.concat(TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp).sort((a, b) => a[0] - b[0])
-    D.unshift(["Orginal Tasks Num", "PoF", "Method"])
+    const D: any[] = [["Orginal Tasks Num", "PoF", "Method"]].concat(TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp)
+    D.unshift()
     return D
   }, [TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp])
-  
   // 创建多个状态，最后合并一起，归并排序
   const AppBeTest = isRandomData ? randomTask  : graphData;
+  console.log(taskNumExperimentData, taskPofExperimentData)
   return (
     <div className="">
       <DataSelector

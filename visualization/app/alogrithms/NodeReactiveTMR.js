@@ -61,18 +61,22 @@ class NodeReactiveTMR extends Node_ {
         const { flagArr, historyArr } = this
         // let wrongCore = null
         for (let core = 0; core < 4; core++) {
-            const element = flagArr[core];
-            for (let j = 0; j < element.length; j++) {
-                if (element[j] === 0 && historyArr[core][j] === 1) {
-                    historyArr[core][j] = 0
-                } else if (element[j] === 1 && !historyArr[core][j]) {
-                    historyArr[core][j] = 1
-                    element[j] = 0
-                } else if (element[j] === 1 && historyArr[core][j] === 1) {
-                    historyArr[core][j] = 0
-                    element[j] = 0
-                    this.deactiveCore(core)
-                    this.addInSideTasks(j, core, round)
+            const flags = flagArr[core];
+            const historys = historyArr[core]
+            for (let j = 0; j < flags.length; j++) {
+                if (flags[j] === 0 && historys[j] === 1) {
+                    historys[j] = 0
+                } else if (flags[j] === 1 && historys[j] === 0) {
+                    historys[j] = 1
+                    flags[j] = 0
+                } else if (flags[j] === 1 && historys[j] === 1) {
+                    historys[j] = 0
+                    flags[j] = 0
+                    // larger than or equal to 3 can't deactive (no avaliable core to used)
+                    if (this.brokenCores.size < 3){
+                        this.deactiveCore(core)
+                        this.addInSideTasks(j, core, round)
+                    }
                 }
             }
         }
@@ -95,14 +99,22 @@ class NodeReactiveTMR extends Node_ {
     setAppID(App) {
         let AppRecord = this.AppRecord.find(v => v.pid == App.pid)
         if (AppRecord === undefined) {
+            // initial data
             AppRecord = {
                 pid: App.pid,
                 round: 0
             }
             this.AppRecord.push(AppRecord)
+            for (let i = 0; i < this.cores.length; i++) {
+                for(let j = 0; j < App.length; j++) {
+                    this.flagArr[i][j] = 0
+                    this.historyArr[i][j] = 0
+                }
+            }
         } else {
             AppRecord.round++
         }
+        
         return AppRecord
     }
 

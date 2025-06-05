@@ -162,7 +162,6 @@ class NodeClusterTMR extends Node_ {
             }, funAfterExecuteEachTask)
             return majorityVoteRes
         })
-        console.log(finalRes)
         return finalRes
     }
 }
