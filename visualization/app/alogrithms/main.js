@@ -2,16 +2,11 @@ const NodeClusterTMR = require('./NodeClusterTMR.js')
 const NodeReactiveTMR = require('./NodeReactiveTMR.js')
 const NodeTwoPhaseTMR = require('./NodeTwoPhaseTMR.js')
 const NodeTMR = require('./NodeTMR.js')
+const throttle = require('./util/throttle.js')
 // const { setLeaderForClusterTMR, setExperimentStateForClusterTMR } = require("../util")
 // const taskGraph = JSON.parse(require('./dataset/fpppp.json'))
 
-/**
- * @todo
- * @todo 将该任务集改成standard task graph
- * 任务构成仿真应用，交给node的是一个应用，node记录这个应用出现多少次，进行roundEnd还有回退等操作
- */
 
-// node.brokeCore(1)
 const Turn = 50
 
 export const hybirdFT_FD_InitialCoreState = [
@@ -61,6 +56,9 @@ function genCoreActiveStateChange(NodeID, setCoresDisabled) {
 }
 
 export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp, setCoresState, setExperimentStatesForTMR) {
+    // 节流实验数据
+    setTMRExcutedNumsComp = throttle(setTMRExcutedNumsComp, 10000)
+    setTMRExcutedPofComp = throttle(setTMRExcutedPofComp, 10000)
     // 同样也是五个机器
     const nodes = new Array(ClusterNumber).fill(null).map((_, NodeID) => new NodeTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState)))
     for (let i = 0; i < ClusterNumber; i++) {
@@ -99,6 +97,8 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
 }
 
 export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp, setCoresState, setExperimentStatesForTwoPhaseTMR) {
+    setTPTMRexcutedNumsComp = throttle(setTPTMRexcutedNumsComp, 10000)
+    setTPTMRexcutedPofComp = throttle(setTPTMRexcutedPofComp, 10000)
     // 同样也是五个机器
     const nodes = new Array(ClusterNumber).fill(null).map((_, NodeID) => new NodeTwoPhaseTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState)))
 
@@ -141,6 +141,8 @@ export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsCo
 
 
 export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsComp, setRTMRexcutedPofComp, setCoresState, setExperimentState, setCoresDisabled) {
+    setRTMRexcutedNumsComp = throttle(setRTMRexcutedNumsComp, 10000)
+    setRTMRexcutedPofComp = throttle(setRTMRexcutedPofComp, 10000)
     const nodes = new Array(ClusterNumber).fill(null).map((_, NodeID) => new NodeReactiveTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), genCoreActiveStateChange(NodeID, setCoresDisabled)));
     for (let i = 0; i < ClusterNumber; i++) {
         for (let j = 0; j < 4; j++) {
@@ -236,7 +238,6 @@ async function testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, s
 
                         } else {
                             // deactiveCores.push([beTestedCore.NodeID, core])
-                            // todo 转移该测试的leader core，如果命中
                             // i beTestedNodeIdx core beTestedCore
                             if (!beTestedNode.brokenCores.has(core)) {
                                 beTestedNode.deactiveCore(core)
@@ -304,7 +305,6 @@ async function testNoLeaderNode(Leaders, eachNode, leaderCores, AppBeTest, selfC
                     }
                 }
             }
-            // todo 指数回退
             if (beTestedNode.brokenCores.has(core) && beTestedNode.conflictTasks[core].size === 0) {
                 beTestedNode.activeCore(core)
             }
@@ -317,6 +317,9 @@ export async function hybirdFT_FD(setLeaderCore,
     setCoresDisabled, setSTs,
     setThreeLeaderNode
 ) {
+    
+    setTPTDTMRexcutedPofComp = throttle(setTPTDTMRexcutedPofComp, 10000)
+    setTPTDTMRexcutedNumsComp = throttle(setTPTDTMRexcutedNumsComp, 10000)
 
     let checkCycle = 2 // 指数增长的checkCycle // 极限为100轮次
     const limit = 100

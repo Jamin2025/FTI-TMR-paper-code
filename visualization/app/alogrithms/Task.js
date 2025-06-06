@@ -1,4 +1,4 @@
-const { calProbability, hitProbability } = require('./poisson.js')
+const { calProbability } = require('./poisson.js')
 let idcount = 0
 class Task {
     result
