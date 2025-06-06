@@ -1,12 +1,13 @@
 const Node_ = require('./Node_')
+const { coreNums } = require("./config")
 
 class NodeReactiveTMR extends Node_ {
 
     // 产生错误的任务列表，保存用于检测是否永久性错误
-    sideTasks = [new Set(), new Set(), new Set(), new Set()]
-    inTurnForSideTasks = [new Map(), new Map(), new Map(), new Map()]
+    sideTasks = []
+    inTurnForSideTasks = []
     // 失败比较次数
-    failedCountSideTasks = [new Map(), new Map(), new Map(), new Map()]
+    failedCountSideTasks = []
     // to next round, record App
     /**
      * @itemstruct {
@@ -21,12 +22,19 @@ class NodeReactiveTMR extends Node_ {
 
     // 按照论文里的二维数组，column是内核数，row是任务数 bit array
     // records faults (either transient or permanent) that have occurred in the inProgress frame
-    flagArr = [[], [], [], []]
+    flagArr = []
     // stores the history of faults (again, either transient or permanent) that have occurred in the prior frames.
-    historyArr = [[], [], [], []]
+    historyArr = []
 
-    constructor(NodeID, startExec, endExec, disableCore) {
-        super(NodeID, startExec, endExec)
+    constructor(NodeID, startExec, endExec, disableCore, coreNums) {
+        super(NodeID, startExec, endExec, coreNums)
+        for (let core = 0; core < coreNums; core++) {
+            this.flagArr[core] = []
+            this.historyArr[core] = []
+            this.sideTasks[core] = new Set()
+            this.inTurnForSideTasks[core] = new Map()
+            this.failedCountSideTasks[core] = new Map()
+        }
         this.activeCore = (coreID) => {
             const success = this.brokenCores.delete(coreID)
             if(!success) throw new Error("activeCore error: " + coreID)
@@ -60,7 +68,7 @@ class NodeReactiveTMR extends Node_ {
     R_TMR_roundEnd(round) {
         const { flagArr, historyArr } = this
         // let wrongCore = null
-        for (let core = 0; core < 4; core++) {
+        for (let core = 0; core < this.coreNums; core++) {
             const flags = flagArr[core];
             const historys = historyArr[core]
             for (let j = 0; j < flags.length; j++) {
@@ -172,7 +180,7 @@ class NodeReactiveTMR extends Node_ {
 
     getSideTaskOnWhichCore(task) {
         const cores = []
-        for (let core = 0; core < 4; core++) {
+        for (let core = 0; core < this.coreNums; core++) {
             if(this.sideTasks[core].has(task.id)) {
                 cores.push(core)
             }
@@ -200,7 +208,7 @@ class NodeReactiveTMR extends Node_ {
     }
 
     async runWithOutBrokenCore(task) {
-        if (this.brokenCores.size === 4) throw new Error("no more regular cores to used");
+        if (this.brokenCores.size === this.coreNums) throw new Error("no more regular cores to used");
         return new Promise((resolve) => {
             // 最空闲内核优先调度
             const filterCores = this.getSortedCoresByLoad().filter((item) => !this.brokenCores.has(item.id));

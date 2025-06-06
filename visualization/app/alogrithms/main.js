@@ -2,22 +2,13 @@ const NodeClusterTMR = require('./NodeClusterTMR.js')
 const NodeReactiveTMR = require('./NodeReactiveTMR.js')
 const NodeTwoPhaseTMR = require('./NodeTwoPhaseTMR.js')
 const NodeTMR = require('./NodeTMR.js')
+const {coreNums, ClusterNumber, InitialCoreState, Turn} = require('./config.js');
 const throttle = require('./util/throttle.js')
 // const { setLeaderForClusterTMR, setExperimentStateForClusterTMR } = require("../util")
 // const taskGraph = JSON.parse(require('./dataset/fpppp.json'))
 
 
-const Turn = 50
 
-export const hybirdFT_FD_InitialCoreState = [
-    ['Broke', 'Idel', 'Idel', 'Idel'],
-    ['Idel', 'Idel', 'Idel', 'Idel'],
-    ['Broke', 'Broke', 'Broke', 'Broke'],
-    ['Broke', 'Broke', 'Broke', 'Idel'],
-    ['Broke', 'Broke', 'Idel', 'Idel'],
-]
-
-export const ClusterNumber = 5;
 
 function genCoreStartExecution(NodeID, setCoresState) {
     return (id) => {
@@ -60,13 +51,16 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
     setTMRExcutedNumsComp = throttle(setTMRExcutedNumsComp, 10000)
     setTMRExcutedPofComp = throttle(setTMRExcutedPofComp, 10000)
     // 同样也是五个机器
-    const nodes = new Array(ClusterNumber).fill(null).map((_, NodeID) => new NodeTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState)))
+    const nodes = new Array(ClusterNumber).fill(null).map(
+        (_, NodeID) => 
+            new NodeTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), coreNums)
+    )
     for (let i = 0; i < ClusterNumber; i++) {
-        for (let j = 0; j < 4; j++) {
-            if (hybirdFT_FD_InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
+        for (let j = 0; j < coreNums; j++) {
+            if (InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
         }
     }
-    const res = []
+    
     let taskNums = 0, excutedNums = 0, failedNums = 0;
     const newExcutedNumsComp = [], newExcutedPofComp = [];
 
@@ -74,15 +68,17 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
         taskNums += taskNum;
         excutedNums += excutedNum;
         if (taskRes !== 0.5) failedNums += 1;
-        const pof = (failedNums / taskNums).toFixed(4)
+        const pofOfTask = (failedNums / taskNums).toFixed(4)
         newExcutedNumsComp.push([taskNums, excutedNums, 'C-TMR'])
-        newExcutedPofComp.push([taskNums, pof, 'C-TMR'])
+        newExcutedPofComp.push([taskNums, pofOfTask, 'C-TMR'])
         setTMRExcutedNumsComp([...newExcutedNumsComp])
         setTMRExcutedPofComp([...newExcutedPofComp])
         // 更新单个组件的实验数据
-        setExperimentStatesForTMR([taskNums, excutedNums, taskNums - failedNums, failedNums, pof])
+        setExperimentStatesForTMR(prev => [taskNums, excutedNums, taskNums - failedNums, failedNums, prev[4]])
     }
+    let failedCounter = 0
     for (let i = 0; i < Turn; i++) {
+        const res = []
         for (let j = 0; j < ClusterNumber; j++) {
             const node = nodes[j];
             if (isRandomData) {
@@ -91,21 +87,31 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
                 res.push(node.runWithTMRForGraphData(AppBeTest, updateExperimentData))
             }
         }
-        await Promise.all(res)
+        
+        const eachAppRes = await Promise.all(res)
+        if (!eachAppRes[0].every(res => res === 0.5)) {
+            failedCounter++;
+            
+        }
+        setExperimentStatesForTMR(prev => [...prev.slice(0, 4), (failedCounter / Turn)])
     }
-    return res;
+    
+    return null;
 }
 
 export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp, setCoresState, setExperimentStatesForTwoPhaseTMR) {
     setTPTMRexcutedNumsComp = throttle(setTPTMRexcutedNumsComp, 10000)
     setTPTMRexcutedPofComp = throttle(setTPTMRexcutedPofComp, 10000)
     // 同样也是五个机器
-    const nodes = new Array(ClusterNumber).fill(null).map((_, NodeID) => new NodeTwoPhaseTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState)))
+    const nodes = new Array(ClusterNumber).fill(null).map(
+        (_, NodeID) => 
+            new NodeTwoPhaseTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), coreNums)
+    )
 
 
     for (let i = 0; i < ClusterNumber; i++) {
-        for (let j = 0; j < 4; j++) {
-            if (hybirdFT_FD_InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
+        for (let j = 0; j < coreNums; j++) {
+            if (InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
         }
     }
     const res = []
@@ -143,10 +149,13 @@ export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsCo
 export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsComp, setRTMRexcutedPofComp, setCoresState, setExperimentState, setCoresDisabled) {
     setRTMRexcutedNumsComp = throttle(setRTMRexcutedNumsComp, 10000)
     setRTMRexcutedPofComp = throttle(setRTMRexcutedPofComp, 10000)
-    const nodes = new Array(ClusterNumber).fill(null).map((_, NodeID) => new NodeReactiveTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), genCoreActiveStateChange(NodeID, setCoresDisabled)));
+    const nodes = new Array(ClusterNumber).fill(null).map(
+        (_, NodeID) =>
+            new NodeReactiveTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), genCoreActiveStateChange(NodeID, setCoresDisabled), coreNums)
+    );
     for (let i = 0; i < ClusterNumber; i++) {
-        for (let j = 0; j < 4; j++) {
-            if (hybirdFT_FD_InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
+        for (let j = 0; j < coreNums; j++) {
+            if (InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
         }
     }
     const res = []
@@ -212,7 +221,7 @@ async function testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, s
     // 150–300ms
     // const deactiveCores = []
     for (let i = 0; i < 3; i++) {
-        for (let core = 0; core < 4; core++) {
+        for (let core = 0; core < coreNums; core++) {
             const beTestedNode = Leaders[i]
             const checkCore0 = beTestedNode.cores[leaderCores[i]]
             // 指数回退
@@ -268,7 +277,7 @@ async function testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, s
 
 async function testNoLeaderNode(Leaders, eachNode, leaderCores, AppBeTest, selfCheckingCounter, funAfterExecuteEachTask) {
     for (let i = 0; i < eachNode.length; i++) {
-        for (let core = 0; core < 4; core++) {
+        for (let core = 0; core < coreNums; core++) {
             const beTestedNode = eachNode[i]
             const checkCore0 = Leaders[0].cores[leaderCores[0]]
             // 指数回退
@@ -323,10 +332,13 @@ export async function hybirdFT_FD(setLeaderCore,
 
     let checkCycle = 2 // 指数增长的checkCycle // 极限为100轮次
     const limit = 100
-    const nodes = new Array(ClusterNumber).fill(null).map((_, NodeID) => new NodeClusterTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), genCoreActiveStateChange(NodeID, setCoresDisabled)))
+    const nodes = new Array(ClusterNumber).fill(null).map(
+        (_, NodeID) => 
+            new NodeClusterTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), genCoreActiveStateChange(NodeID, setCoresDisabled), coreNums)
+    )
     for (let i = 0; i < ClusterNumber; i++) {
-        for (let j = 0; j < 4; j++) {
-            if (hybirdFT_FD_InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
+        for (let j = 0; j < coreNums; j++) {
+            if (InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
         }
     }
     // 记录用于指数回退

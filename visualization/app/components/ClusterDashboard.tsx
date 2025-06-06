@@ -1,22 +1,22 @@
 "use client";
 import { DashboardContainer, ClusterGrid } from "./styledComp";
-import { insetCoreStateForClusterTMR, insetExperimentStateForClusterTMR, insetSTForClusterTMR, insetLeaderForClusterTMR, insetCoresDisabledForClusterTMR } from "../util/index"
-import { hybirdFT_FD_InitialCoreState, ClusterNumber, hybirdFT_FD } from "../alogrithms/main";
+import { hybirdFT_FD } from "../alogrithms/main";
 import Machine from "./Machine";
 import { ExperimentRow } from "./ExperimentResult";
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import StatusInfoBar from "./StatusInfoBar";
+import {InitialCoreState, ClusterNumber, coreNums} from "../alogrithms/config"
 
 
 
 
 
 const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, setTPTDTMRexcutedPofComp}: any) => {
-    const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
+    const [coresState, setCoresState] = useState(InitialCoreState)
     const [experimentStates, setExperimentStates] = useState([0,0,0,0,0])
     const [STs, setSTs] = useState(new Array(ClusterNumber).fill(0))
     const [coresDisabled, setCoresDisabled] = useState(
-      new Array(ClusterNumber).fill(null).map(() => new Array(4).fill(false))
+      new Array(ClusterNumber).fill(null).map(() => new Array(coreNums).fill(false))
     )
     const [threeLeaderNode, setThreeLeaderNode] = useState<number[]>([-1, -1, -1])
     const [leaderCore, setLeaderCore] = useState<any>({})
@@ -53,6 +53,7 @@ const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, s
               machineId={nodeId}
               coreState={coresState[nodeId]}
               coresDisabled={coresDisabled[nodeId]}
+              coreNums={coreNums}
               isLeader={threeLeaderNode.includes(nodeId)}
               leaderCore={leaderCore}
             />

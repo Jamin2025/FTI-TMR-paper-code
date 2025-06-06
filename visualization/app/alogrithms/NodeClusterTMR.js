@@ -3,16 +3,16 @@ const Node_ = require('./Node_')
 class NodeClusterTMR extends Node_ {
 
     // 争议任务，用于cluster比较
-    conflictTasks = [new Set(), new Set(), new Set(), new Set()]
+    conflictTasks = []
 
     // 为了去重
     brokenCores = new Set()
 
     brokeCoresCheckingCycle = new Map()
-    // @TODO 修改加入一些核心的状态修改等等操作
-    constructor(NodeID, startExec, endExec, disableCore) {
-        super(NodeID, startExec, endExec)
 
+    constructor(NodeID, startExec, endExec, disableCore, coreNums) {
+        super(NodeID, startExec, endExec, coreNums)
+        this.conflictTasks = new Array(coreNums).fill(0).map(() => new Set())
         this.activeCore = (coreID) => {
             const success = this.brokenCores.delete(coreID)
             if(!success) throw new Error("activeCore error: " + coreID)
@@ -39,7 +39,7 @@ class NodeClusterTMR extends Node_ {
     }
 
     hasAvaliableCore() {
-        return this.brokenCores.size !== 4
+        return this.brokenCores.size !== this.coreNums
     }
 
     updateBrokenCoreCheckingCycle(core, cycle) {
@@ -47,7 +47,7 @@ class NodeClusterTMR extends Node_ {
     }
 
     async runWithOutBrokenCore(task) {
-        if (this.brokenCores.size === 4) throw new Error("no more regular cores to used");
+        if (this.brokenCores.size === this.coreNums) throw new Error("no more regular cores to used");
         return new Promise((resolve) => {
             // 最空闲内核优先调度
             const filterCores = this.getSortedCoresByLoad().filter((item) => !this.brokenCores.has(item.id));
@@ -96,6 +96,7 @@ class NodeClusterTMR extends Node_ {
                 // console.log("Node Id: ", this.NodeID, " fullCalCores: ", fullcalCores)
                 const [finalRes, failedCores] = Node_.FT.TMR_with_fault_core(...result, c, fullcalCores)
                 if (Array.isArray(failedCores)) {
+                    console.log(failedCores, this.conflictTasks)
                     failedCores.forEach(core => this.conflictTasks[core].add(task.id))
                 } else {
                     this.conflictTasks[failedCores].add(task.id)

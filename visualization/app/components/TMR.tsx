@@ -2,14 +2,14 @@
 import { DashboardContainer } from "./styledComp";
 import Machine  from "./Machine";
 import ExperimentResult from './ExperimentResult'
-import { useState, useEffect, useRef } from "react";
-import { TMR, hybirdFT_FD_InitialCoreState, ClusterNumber } from "../alogrithms/main"
+import { useState } from "react";
+import { TMR } from "../alogrithms/main"
 // import LJFSchedule from "../alogrithms/listSchedule"
-import { insetCoreStateForTMR, insetExperimentStateForTMR } from "../util/index"
+import { InitialCoreState, ClusterNumber, coreNums} from "../alogrithms/config"
 
 const TMRDashboard = ({AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp}: any) => {
     
-  const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
+  const [coresState, setCoresState] = useState(InitialCoreState)
   const [experimentStates, setExperimentStatesForTMR] = useState([0, 0, 0, 0, 0])
   
     
@@ -37,6 +37,7 @@ const TMRDashboard = ({AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExc
                   key={nodeId}
                   machineId={nodeId}
                   coreState={coresState[nodeId]}
+                  coreNums={coreNums}
                 />
               ))}
             </div>

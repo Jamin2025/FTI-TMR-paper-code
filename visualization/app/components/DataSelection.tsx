@@ -1,8 +1,6 @@
 "use client"
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, { ChangeEvent, useEffect } from "react";
 import GraphVisiualization from "./GraphVisiual";
-import Task from "../alogrithms/Task";
-import { insetRandomData } from "../util/storeData";
 const DataTypes = ["random", 'robot', 'fpppp', 'sparse']
 
 

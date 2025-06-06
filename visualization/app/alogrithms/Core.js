@@ -1,7 +1,6 @@
 
 const { hitProbability } = require('./poisson.js')
 const MaxHeap = require ("./util/heap.js").default
-const coreNums = 4
 
 function largerTaskOfDuration(a, b) {
     return a.duration > b.duration
@@ -102,7 +101,4 @@ class Core {
     }
 }
 
-module.exports = {
-    Core,
-    coreNums
-}
+module.exports = Core

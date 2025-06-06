@@ -1,9 +1,9 @@
-const { coreNums, Core } = require('./Core')
+const Core = require('./Core')
 const Task = require("./Task")
 const deepCopy = require("./util/deepCopy.js")
 
 class Node {
-    cores = new Array(coreNums)
+    cores = []
 
     brokeCore(id) {
         this.cores[id].broke()
@@ -14,10 +14,12 @@ class Node {
     static mode_LTF = "LTF"
 
     NodeID = null
+    coreNums = null
 
-    constructor(NodeID, coreStartExec, coreEndExec) {
+    constructor(NodeID, coreStartExec, coreEndExec, coreNums) {
         const { cores } = this
         this.NodeID = NodeID
+        this.coreNums = coreNums
         for (let coreID = 0; coreID < coreNums; coreID++) {
             cores[coreID] = new Core(coreID, coreStartExec, coreEndExec)
         }
@@ -64,8 +66,9 @@ class Node {
 
     // 空闲内核优先调度 lgf longest task first?
     runOnDistinctCores(num, exclude, task) {
+        const { coreNums } = this
         const hasExclude = exclude instanceof Set
-        if (hasExclude && exclude.size === 4) return {freeCores: [], callArr: [], noMoreCore: true};
+        if (hasExclude && exclude.size === coreNums) return {freeCores: [], callArr: [], noMoreCore: true};
         if (hasExclude && coreNums - exclude.size < num) return {freeCores: [], callArr: [], noMoreCore: true}
         const callCores = []
         const callArr = []

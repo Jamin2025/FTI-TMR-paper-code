@@ -17,13 +17,29 @@ function poisson(lambda, k) {
 const lambda0 = 10 ** -6; // 平均发生率
 d = 3
 
-const lambda = lambda0 * 10 ** d;
+
 
 const k = 0; // 发生次数
-
+// 压频比数值
+const S = [
+  0.85 / 1.55,
+  0.95 / 1.55,
+  1.05 / 1.55,
+  1.15 / 1.55,
+  1.25 / 1.55,
+  1.35 / 1.55,
+  1.45 / 1.55,
+  1.55 / 1.55
+]
 
 // T 为time length of the task
 function calProbability(T) {
+  const lambda = lambda0 * 
+    10 ** (
+      d 
+      // * (1 - S[parseInt(Math.random() * S.length)])
+      // / (1- S[0])
+    );
   const probability = 1 - poisson(lambda * T, k);
   return probability;
 }

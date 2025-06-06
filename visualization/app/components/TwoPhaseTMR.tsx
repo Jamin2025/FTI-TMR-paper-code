@@ -2,12 +2,12 @@
 import { DashboardContainer } from "./styledComp";
 import Machine  from "./Machine";
 import ExperimentResult from './ExperimentResult'
-import { useState, useEffect, useRef } from "react";
-import { TwoPhaseTMR, hybirdFT_FD_InitialCoreState, ClusterNumber } from "../alogrithms/main"
-import { insetCoreStateForTwoPhaseTMR, insetExperimentStateForTwoPhaseTMR } from "../util/index"
+import { useState } from "react";
+import { TwoPhaseTMR } from "../alogrithms/main"
+import { InitialCoreState, ClusterNumber, coreNums} from "../alogrithms/config"
 
 const TwoPhaseTMRDashboard = ({AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp}: any) => {
-    const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
+    const [coresState, setCoresState] = useState(InitialCoreState)
     
     const [experimentStates, setExperimentStateForTwoPhaseTMR] = useState([0, 0, 0, 0, 0])
 
@@ -23,6 +23,7 @@ const TwoPhaseTMRDashboard = ({AppBeTest, isRandomData, setTPTMRexcutedNumsComp,
                   key={nodeId}
                   machineId={nodeId}
                   coreState={coresState[nodeId]}
+                  coreNums={coreNums}
                 />
               ))}
             </div>

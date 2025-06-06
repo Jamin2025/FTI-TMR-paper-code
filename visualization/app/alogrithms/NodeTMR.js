@@ -2,8 +2,8 @@ const Node_ = require('./Node_')
 
 
 class NodeTMR extends Node_ {
-    constructor(NodeID, startExec, endExec) {
-        super(NodeID, startExec, endExec)
+    constructor(NodeID, startExec, endExec, coreNums) {
+        super(NodeID, startExec, endExec, coreNums)
     }
 
     executeTaskWithTMR(task, funAfterExecuteEachTask) {

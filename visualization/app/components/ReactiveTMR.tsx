@@ -2,14 +2,15 @@
 import { DashboardContainer } from "./styledComp";
 import Machine  from "./Machine";
 import ExperimentResult from './ExperimentResult'
-import { useState, useEffect, useRef } from "react";
-import { ReactiveTMR, hybirdFT_FD_InitialCoreState, ClusterNumber } from "../alogrithms/main"
+import { useState } from "react";
+import { ReactiveTMR } from "../alogrithms/main"
+import {coreNums, InitialCoreState, ClusterNumber} from "../alogrithms/config"
 
 const ReactiveTMRDashboard = ({AppBeTest, isRandomData, setRTMRexcutedNumsComp, setRTMRexcutedPofComp}: any) => {
-    const [coresState, setCoresState] = useState(hybirdFT_FD_InitialCoreState)
+    const [coresState, setCoresState] = useState(InitialCoreState)
     
     // const [storageState, setStorageState] = useState(ReactiveTMRIntialState.storages)
-    const [coresDisabled, setCoresDisabled] = useState(new Array(ClusterNumber).fill(null).map(() => new Array(4).fill(false)))
+    const [coresDisabled, setCoresDisabled] = useState(new Array(ClusterNumber).fill(null).map(() => new Array(coreNums).fill(false)))
     const [experimentStates, setExperimentState] = useState([0, 0, 0, 0, 0])
 
     return (
@@ -25,6 +26,7 @@ const ReactiveTMRDashboard = ({AppBeTest, isRandomData, setRTMRexcutedNumsComp, 
                   machineId={nodeId}
                   coreState={coresState[nodeId]}
                   coresDisabled={coresDisabled[nodeId]}
+                  coreNums={coreNums}
                 />
               ))}
             </div>
