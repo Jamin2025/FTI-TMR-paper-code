@@ -69,7 +69,7 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
         // if (taskRes !== 0.5) failedTaskNums += 1;
     }
     let failedApp = 0
-    let frequency = 10;
+    const frequency = 10;
     for (let turn = 0; turn < Turn; turn++) {
         const ClusterRes = []
         for (let j = 0; j < ClusterNumber; j++) {
@@ -88,7 +88,6 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
                 // 数据更新降低频次
                 
                 if (appNum % frequency === 0 || appNum === 1) {
-                    if (frequency < 100) frequency++
                     newExcutedNumsComp.push([appNum, excutedTaskNums, 'C-TMR'])
                     newExcutedPofComp.push([appNum, Pof, 'C-TMR'])
                     setTMRExcutedNumsComp([...newExcutedNumsComp])
