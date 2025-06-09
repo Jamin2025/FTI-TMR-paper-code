@@ -84,7 +84,7 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
             eachAppRes.then((res) => {
                 if (res.some(item => item !== 0.5)) failedApp++;  
                 const appNum = turn + 1;
-                const Pof = (failedApp / appNum).toFixed(4)
+                const Pof = (failedApp / appNum)
                 // 数据更新降低频次
                 
                 if (appNum % frequency === 0 || appNum === 1) {
