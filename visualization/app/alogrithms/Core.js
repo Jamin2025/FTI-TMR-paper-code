@@ -48,7 +48,7 @@ class Core {
                 this.isCalculating = false
                 if (typeof this.endExec === "function") this.endExec(this.id, this.isPermentFault)
                 resolve(task.result)
-            }, 10)
+            })
             // task.duration * 
         })
     }

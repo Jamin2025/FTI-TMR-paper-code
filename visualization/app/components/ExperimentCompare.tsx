@@ -73,7 +73,7 @@ function run(_rawData: any, myChart: any, title: string, Y: string) {
     xAxis: {
       type: 'category',
       nameLocation: 'middle',
-      name: 'Original Tasks Num',
+      name: 'Excuted App Num',
       nameGap: 30,
     },
     yAxis: {

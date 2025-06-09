@@ -48,8 +48,6 @@ function genCoreActiveStateChange(NodeID, setCoresDisabled) {
 
 export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp, setCoresState, setExperimentStatesForTMR) {
     // 节流实验数据
-    setTMRExcutedNumsComp = throttle(setTMRExcutedNumsComp, 10000)
-    setTMRExcutedPofComp = throttle(setTMRExcutedPofComp, 10000)
     // 同样也是五个机器
     const nodes = new Array(ClusterNumber).fill(null).map(
         (_, NodeID) => 
@@ -61,39 +59,47 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
         }
     }
     
-    let taskNums = 0, excutedNums = 0, failedNums = 0;
+    let orginalTaskNums = 0, excutedTaskNums = 0, failedTaskNums = 0;
+
     const newExcutedNumsComp = [], newExcutedPofComp = [];
 
-    const updateExperimentData = (taskNum, excutedNum, taskRes) => {
-        taskNums += taskNum;
-        excutedNums += excutedNum;
-        if (taskRes !== 0.5) failedNums += 1;
-        const pofOfTask = (failedNums / taskNums).toFixed(4)
-        newExcutedNumsComp.push([taskNums, excutedNums, 'C-TMR'])
-        newExcutedPofComp.push([taskNums, pofOfTask, 'C-TMR'])
-        setTMRExcutedNumsComp([...newExcutedNumsComp])
-        setTMRExcutedPofComp([...newExcutedPofComp])
-        // 更新单个组件的实验数据
-        setExperimentStatesForTMR(prev => [taskNums, excutedNums, taskNums - failedNums, failedNums, prev[4]])
+    const excutedAfterEachTask = (taskNum, excutedNum, taskRes) => {
+        orginalTaskNums += taskNum;
+        excutedTaskNums += excutedNum;
+        // if (taskRes !== 0.5) failedTaskNums += 1;
     }
-    let failedCounter = 0
-    for (let i = 0; i < Turn; i++) {
-        const res = []
+    let failedApp = 0
+    let frequency = 10;
+    for (let turn = 0; turn < Turn; turn++) {
+        const ClusterRes = []
         for (let j = 0; j < ClusterNumber; j++) {
             const node = nodes[j];
+            let eachAppRes = null;
             if (isRandomData) {
-                res.push(node.runWithTMRForRandomData(AppBeTest, updateExperimentData))
+                eachAppRes = node.runWithTMRForRandomData(AppBeTest, excutedAfterEachTask)
             } else {
-                res.push(node.runWithTMRForGraphData(AppBeTest, updateExperimentData))
+                eachAppRes = node.runWithTMRForGraphData(AppBeTest, excutedAfterEachTask)
             }
+            ClusterRes.push(eachAppRes)
+            eachAppRes.then((res) => {
+                if (res.some(item => item !== 0.5)) failedApp++;  
+                const appNum = turn + 1;
+                const Pof = (failedApp / appNum).toFixed(4)
+                // 数据更新降低频次
+                
+                if (appNum % frequency === 0 || appNum === 1) {
+                    if (frequency < 100) frequency++
+                    newExcutedNumsComp.push([appNum, excutedTaskNums, 'C-TMR'])
+                    newExcutedPofComp.push([appNum, Pof, 'C-TMR'])
+                    setTMRExcutedNumsComp([...newExcutedNumsComp])
+                    setTMRExcutedPofComp([...newExcutedPofComp])
+                    setExperimentStatesForTMR([appNum, excutedTaskNums, appNum - failedApp, failedApp, Pof])
+                }
+            })
         }
+        await Promise.all(ClusterRes)
         
-        const eachAppRes = await Promise.all(res)
-        if (!eachAppRes[0].every(res => res === 0.5)) {
-            failedCounter++;
-            
-        }
-        setExperimentStatesForTMR(prev => [...prev.slice(0, 4), (failedCounter / Turn)])
+        // setExperimentStatesForTMR(prev => [...prev.slice(0, 4), (failedCounter / Turn)])
     }
     
     return null;
