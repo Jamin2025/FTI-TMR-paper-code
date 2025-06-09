@@ -2,7 +2,7 @@ const NodeClusterTMR = require('./NodeClusterTMR.js')
 const NodeReactiveTMR = require('./NodeReactiveTMR.js')
 const NodeTwoPhaseTMR = require('./NodeTwoPhaseTMR.js')
 const NodeTMR = require('./NodeTMR.js')
-const {coreNums, ClusterNumber, InitialCoreState, Turn, frequency} = require('./config.js');
+const {coreNums, ClusterNumber, InitialCoreState, Turn, updateExperimentFrequency} = require('./config.js');
 const throttle = require('./util/throttle.js')
 // const { setLeaderForClusterTMR, setExperimentStateForClusterTMR } = require("../util")
 // const taskGraph = JSON.parse(require('./dataset/fpppp.json'))
@@ -85,7 +85,7 @@ export async function TMR(AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMR
         }
         await Promise.all(ClusterRes)
         // 数据更新降低频次
-        if (turn % frequency === 0 || turn === 1) {
+        if (turn % updateExperimentFrequency === 0 || turn === 1) {
             const Pof = (failedAppNum / excutedAppNum).toFixed(9)
             newExcutedNumsComp.push([excutedAppNum, excutedTaskNums, 'C-TMR'])
             newExcutedPofComp.push([excutedAppNum, Pof, 'C-TMR'])
@@ -138,7 +138,7 @@ export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsCo
         }
         await Promise.all(ClusterRes)
         // 数据更新降低频次
-        if (turn % frequency === 0 || turn === 1) {
+        if (turn % updateExperimentFrequency === 0 || turn === 1) {
             const Pof = (failedAppNum / excutedAppNum).toFixed(9)
             newExcutedNumsComp.push([excutedAppNum, excutedTaskNums, 'TP-TMR'])
             setTPTMRexcutedNumsComp([...newExcutedNumsComp])
@@ -189,7 +189,7 @@ export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsCom
             ClusterRes.push(eachAppRes)
         }
         await Promise.all(ClusterRes)
-        if (turn % frequency === 0 || turn === 1) {
+        if (turn % updateExperimentFrequency === 0 || turn === 1) {
             const pof = (failedAppNum / excutedAppNum).toFixed(9)
             newExcutedNumsComp.push([excutedAppNum, excutedTaskNums, 'R-TMR'])
             setRTMRexcutedNumsComp([...newExcutedNumsComp])
@@ -388,7 +388,7 @@ export async function hybirdFT_FD(setLeaderCore,
         }
         await Promise.all(ClusterRes)
         // 数据更新降低频次
-        if (turn % frequency === 0 || turn === 1) {
+        if (turn % updateExperimentFrequency === 0 || turn === 1) {
             const pof = (failedAppNum / excutedAppNum).toFixed(9)
             newExcutedPofComp.push([excutedAppNum, pof, 'FDT-TMR'])
             newExcutedNumsComp.push([excutedAppNum, excutedTaskNums, 'FDT-TMR'])
