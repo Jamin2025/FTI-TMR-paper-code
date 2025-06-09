@@ -5,10 +5,10 @@ const ExperimentResult = ({experimentStates}: {experimentStates: number[]}) => {
   return (
     <DashboardContainer>
       <h1 className="text-2xl font-bold mt-5 mb-5">Experiment Result</h1>
-      <ExperimentRow>Excuted App Num: {experimentStates[0]}</ExperimentRow>
+      <ExperimentRow>Executed App Num: {experimentStates[0]}</ExperimentRow>
       <ExperimentRow>Executed Task Num: {experimentStates[1]}</ExperimentRow>
-      <ExperimentRow>Correct result: {experimentStates[2]}</ExperimentRow>
-      <ExperimentRow>Faulty result: {experimentStates[3]}</ExperimentRow>
+      <ExperimentRow>Correct Executed Num: {experimentStates[2]}</ExperimentRow>
+      <ExperimentRow>Faulty Executed Num: {experimentStates[3]}</ExperimentRow>
       <ExperimentRow>PoF: {experimentStates[4]}</ExperimentRow>
     </DashboardContainer>
   )

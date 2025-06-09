@@ -19,13 +19,13 @@ class NodeTMR extends Node_ {
 
     async runWithTMRForRandomData(App, funAfterExecuteEachTask) {
         this.switchScheduleMode(Node_.mode_FCFS)
-        const res = []
+        const eachTasks = []
         const AppLen = App.length
         for(let i = 0; i < AppLen; i++) {
             let task = App[i]
-            res.push(this.executeTaskWithTMR(task, funAfterExecuteEachTask))
+            eachTasks.push(this.executeTaskWithTMR(task, funAfterExecuteEachTask))
         }
-        const finalRes = await Promise.all(res)
+        const finalRes = await Promise.all(eachTasks)
         return finalRes
     }
 

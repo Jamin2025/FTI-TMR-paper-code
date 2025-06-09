@@ -37,7 +37,7 @@ function calProbability(T) {
   const lambda = lambda0 * 
     10 ** (
       d 
-      * (1 - S[3])
+      * (1 - S[4])
       / (1- S[0])
     );
   const probability = 1 - poisson(lambda * T, k);

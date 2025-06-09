@@ -2,6 +2,7 @@ export const coreNums = 4
 
 export const Turn = 1e9
 
+export const updateExperimentFrequency = 50
 // export const InitialCoreState = [
 //     ['Broke', 'Idel', 'Idel', 'Idel', 'Idel'],
 //     ['Idel', 'Idel', 'Idel', 'Idel', 'Idel'],
