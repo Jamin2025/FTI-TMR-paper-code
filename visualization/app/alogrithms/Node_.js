@@ -46,9 +46,8 @@ class Node {
             for (const originTask of unScheduleTasks) {
                 if (!originTask.complete && originTask.predecessors.every(id => App[id].complete)) {
                     unScheduleTasks.delete(originTask)
-                    const task = new Task(originTask.id,  originTask.duration)
                     // const waitVotintThreeRes = await this.calTask(task, 0);
-                    const vote = execte(task).then((res) => {
+                    const vote = execte(originTask).then((res) => {
                         originTask.complete = true
                         raceSet.delete(vote)
                         return res

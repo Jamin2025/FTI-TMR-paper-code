@@ -183,10 +183,10 @@ export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsCom
                 const notTryReactive = !!taskNum
                 if (notTryReactive && !isWrong && taskRes !== 0.5) isWrong = true
             }
-            if (isRandomData) reachAppRes = node.runWithReactiveTMRForRandom(AppBeTest, excuteAfterEachTask)
+            if (isRandomData) eachAppRes = node.runWithReactiveTMRForRandom(AppBeTest, excuteAfterEachTask)
             else eachAppRes = node.runWithReactiveTMRForGraph(AppBeTest, excuteAfterEachTask)
-            eachAppRes.then(() => ++excutedAppNum && isWrong && failedAppNum++)
             ClusterRes.push(eachAppRes)
+            eachAppRes.then(() => ++excutedAppNum && isWrong && failedAppNum++)
         }
         await Promise.all(ClusterRes)
         if (turn % updateExperimentFrequency === 0 || turn === 1) {

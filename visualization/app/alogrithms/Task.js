@@ -10,10 +10,11 @@ class Task {
             this.id = id;
             this.duration = duration
             this.transientFaultProbality = calProbability(this.duration)
+            // console.log(this.transientFaultProbality)
         } else {
             this.id = idcount++
             this.duration = Math.random() * 10;
-            this.transientFaultProbality = calProbability(this.duration) + 0.05
+            this.transientFaultProbality = calProbability(this.duration)
         }
     }
 }

@@ -61,26 +61,26 @@ function assignPositions(nodes: any, levelMap: any, amplife?: boolean) {
   return positioned;
 }
 const GraphVisiualization = ({
-  graphData,
+  graphApp,
   amplife,
 }: {
-  graphData?: Graph;
+  graphApp?: Graph;
   amplife?: boolean;
 }) => {
   const graphRef = useRef<HTMLDivElement>(null);
   //
   useEffect(() => {
     // Initialize the echarts instance based on the prepared dom
-    if (!graphData) return;
+    if (!graphApp) return;
     var myChart = echarts.init(graphRef.current);
-    const nodeList = graphData.map((item) => ({
+    const nodeList = graphApp.map((item) => ({
       name: `T${item.id}\n${item.duration}`,
       id: item.id,
     }));
 
     const links = [];
-    for (let id = 0; id < graphData.length; id++) {
-      const node = graphData[id];
+    for (let id = 0; id < graphApp.length; id++) {
+      const node = graphApp[id];
       for (let predecessor of node.predecessors) {
         links.push({ source: +predecessor, target: id });
       }
@@ -128,7 +128,7 @@ const GraphVisiualization = ({
     // Display the chart using the configuration items and data just specified.
     // @ts-ignore
     myChart.setOption(option);
-  }, [graphData, amplife]);
+  }, [graphApp, amplife]);
 
   return (
     <div className="flex items-center w-full align-middle justify-center">

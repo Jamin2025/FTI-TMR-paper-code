@@ -4,14 +4,10 @@ import GraphVisiualization from "./GraphVisiual";
 const DataTypes = ["random", 'robot', 'fpppp', 'sparse']
 
 
-const DataSelector = ({selected, setSelected, taskLen, setTaskLen, graphData, setGraphData, randomTask} : any) => {
+const DataSelector = ({selected, setSelected, taskLen, setTaskLen, graphApp, randomApp} : any) => {
 
 
-  useEffect(() => {
-    selected !== 'random' && import(`../alogrithms/dataset/${selected}.json`).then((v) => {
-      setGraphData(v.default)
-    })
-  }, [selected])
+  
 
   function handleTaskLen(e: ChangeEvent<HTMLInputElement>) {
     const v = e.target.value;
@@ -48,19 +44,19 @@ const DataSelector = ({selected, setSelected, taskLen, setTaskLen, graphData, se
       )}
     
     </div>
-      {selected !== 'random' &&  <GraphVisiualization graphData={graphData} amplife={selected=='robot'} />}
-      {selected === 'random' &&  <RandomVisiualization randomTask={randomTask}/>}
+      {selected !== 'random' &&  <GraphVisiualization graphApp={graphApp} amplife={selected=='robot'} />}
+      {selected === 'random' &&  <RandomVisiualization randomApp={randomApp}/>}
     </div>
    
   );
 };
 
-const RandomVisiualization = ({randomTask}: {randomTask: any}) => {
+const RandomVisiualization = ({randomApp}: {randomApp: any}) => {
   
 
   return (
     <div className="flex px-[10%] flex-wrap">
-      {Array.isArray(randomTask) && randomTask.map((task) => (
+      {Array.isArray(randomApp) && randomApp.map((task) => (
         <div
           key={task.id}
           className="bg-white border rounded-2xl p-2 hover:scale-[1.02] my-5 ml-5 w-16 transition-transform"
