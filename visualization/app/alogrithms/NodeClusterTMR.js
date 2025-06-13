@@ -96,7 +96,6 @@ class NodeClusterTMR extends Node_ {
                 // console.log("Node Id: ", this.NodeID, " fullCalCores: ", fullcalCores)
                 const [finalRes, failedCores] = Node_.FT.TMR_with_fault_core(...result, c, fullcalCores)
                 if (Array.isArray(failedCores)) {
-                    console.log(failedCores, this.conflictTasks)
                     failedCores.forEach(core => this.conflictTasks[core].add(task.id))
                 } else {
                     this.conflictTasks[failedCores].add(task.id)

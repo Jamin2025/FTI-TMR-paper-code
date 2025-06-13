@@ -7,9 +7,12 @@ import ReactiveTMRDashboard from "./components/ReactiveTMR";
 import DataSelector from "./components/DataSelection";
 import { useEffect, useMemo, useState } from "react";
 import Task from "./alogrithms/Task";
+import { MergeSort } from "./alogrithms/util/mergeSort";
 import ExperimentCompare from './components/ExperimentCompare'
 
 const DataTypes = ["random", 'robot', 'fpppp', 'sparse']
+
+// const mergeSort = new MergeSort((a : any, b: any) => a[0] < b[0]);
 
 export default function Home() {
   const [selected, setSelected] = useState(DataTypes[1]);
@@ -44,19 +47,20 @@ export default function Home() {
     })
   }, [isRandomData, selected])
   // 建立四个pof
-  console.log(graphApp)
   // 建立四个eachnode alg数据节点
 
   const taskNumExperimentData = useMemo(() => {
+    // const mergeSortedArrs = mergeSort.sortSortedArrs()
     const D: any[] = [["Excuted App Num", "Excuted Tasks Num", "Method"]].concat(TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp)
     return D
   }, [TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp])
 
   const taskPofExperimentData = useMemo(() => {
+    // const mergeSortedArrs = mergeSort.sortSortedArrs(TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp)
     const D: any[] = [["Excuted App Tasks Num", "PoF", "Method"]].concat(TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp)
     return D
   }, [TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp])
-
+  console.log(taskPofExperimentData)
   const AppBeTest = isRandomData ? randomApp  : graphApp;
 
 

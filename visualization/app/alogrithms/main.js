@@ -154,8 +154,7 @@ export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsCo
 
 
 export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsComp, setRTMRexcutedPofComp, setCoresState, setExperimentState, setCoresDisabled) {
-    setRTMRexcutedNumsComp = throttle(setRTMRexcutedNumsComp, 10000)
-    setRTMRexcutedPofComp = throttle(setRTMRexcutedPofComp, 10000)
+
     const nodes = new Array(ClusterNumber).fill(null).map(
         (_, NodeID) =>
             new NodeReactiveTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), genCoreActiveStateChange(NodeID, setCoresDisabled), coreNums)
@@ -340,9 +339,6 @@ export async function hybirdFT_FD(setLeaderCore,
     setCoresDisabled, setSTs,
     setThreeLeaderNode
 ) {
-    
-    setTPTDTMRexcutedPofComp = throttle(setTPTDTMRexcutedPofComp, 10000)
-    setTPTDTMRexcutedNumsComp = throttle(setTPTDTMRexcutedNumsComp, 10000)
 
     let checkCycle = 2 // 指数增长的checkCycle // 极限为100轮次
     const limit = 100
@@ -360,6 +356,10 @@ export async function hybirdFT_FD(setLeaderCore,
     let taskNums = 0, excutedTaskNums = 0, failedNums = 0;
     const newExcutedNumsComp = [], newExcutedPofComp = [];
     let failedAppNum = 0, excutedAppNum = 0;
+    function updateAfterEachTaskExecuted(taskNum, excutedNum) {
+        taskNums += taskNum
+        excutedTaskNums += excutedNum
+    }
 
     
     // 相当于每个机器跑了Turn * AppBeTest.length个任务
@@ -371,32 +371,22 @@ export async function hybirdFT_FD(setLeaderCore,
             let eachAppRes = null;
             let isWrong = false
             
-            function updateAfterEachTaskExecuted(taskNum, excutedNum, taskRes) {
-                taskNums += taskNum
-                excutedTaskNums += excutedNum
+            function wrapIsAPPFailedUpdateAfterEachTaskExecuted(taskNum, excutedNum, taskRes) {
+                updateAfterEachTaskExecuted(taskNum, excutedNum)
                 const notTryReactive = !!taskNum
                 if (notTryReactive && !isWrong && taskRes !== 0.5) isWrong = true
             }
 
             if (isRandomData) {
-                eachAppRes = nodes[i].runWithTwoPhaseTMRForRandomData(AppBeTest, updateAfterEachTaskExecuted)
+                eachAppRes = nodes[i].runWithTwoPhaseTMRForRandomData(AppBeTest, wrapIsAPPFailedUpdateAfterEachTaskExecuted)
             } else {
-                eachAppRes = nodes[i].runWithTwoPhaseTMRForGraphData(AppBeTest, updateAfterEachTaskExecuted)
+                eachAppRes = nodes[i].runWithTwoPhaseTMRForGraphData(AppBeTest, wrapIsAPPFailedUpdateAfterEachTaskExecuted)
             }
             eachAppRes.then(() => ++excutedAppNum && isWrong && failedAppNum++)
             ClusterRes.push(eachAppRes)
         }
         await Promise.all(ClusterRes)
-        // 数据更新降低频次
-        if (turn % updateExperimentFrequency === 0 || turn === 1) {
-            const pof = (failedAppNum / excutedAppNum).toFixed(9)
-            newExcutedPofComp.push([excutedAppNum, pof, 'FDT-TMR'])
-            newExcutedNumsComp.push([excutedAppNum, excutedTaskNums, 'FDT-TMR'])
-            setTPTDTMRexcutedNumsComp([...newExcutedNumsComp])
-            setTPTDTMRexcutedPofComp([...newExcutedPofComp])
-            setSTs(nodes.map(node => node.ST))
-            setExperimentStates([excutedAppNum, excutedTaskNums, excutedAppNum - failedAppNum, failedAppNum, pof])
-        }
+        
         let toNextTurn = false
         // 进入自检周期
         while (turn % checkCycle === 0 && !toNextTurn) {
@@ -445,6 +435,16 @@ export async function hybirdFT_FD(setLeaderCore,
             }
             // console.log(STs)
             // return
+        }
+        // 数据更新降低频次
+        if (turn % updateExperimentFrequency === 0 || turn === 1) {
+            const pof = (failedAppNum / excutedAppNum).toFixed(9)
+            newExcutedPofComp.push([excutedAppNum, pof, 'FDT-TMR'])
+            newExcutedNumsComp.push([excutedAppNum, excutedTaskNums, 'FDT-TMR'])
+            setTPTDTMRexcutedNumsComp([...newExcutedNumsComp])
+            setTPTDTMRexcutedPofComp([...newExcutedPofComp])
+            setSTs(nodes.map(node => node.ST))
+            setExperimentStates([excutedAppNum, excutedTaskNums, excutedAppNum - failedAppNum, failedAppNum, pof])
         }
     }
 

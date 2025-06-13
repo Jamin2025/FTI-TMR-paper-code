@@ -14,6 +14,7 @@ function run(_rawData: any, myChart: any, title: string, Y: string) {
   const seriesList: echarts.SeriesOption[] = [];
   echarts.util.each(methods, function (method) {
     var datasetId = 'dataset_' + method;
+    
     datasetWithFilters.push({
       id: datasetId,
       fromDatasetId: 'dataset_raw',
@@ -27,6 +28,7 @@ function run(_rawData: any, myChart: any, title: string, Y: string) {
         }
       }
     });
+
     seriesList.push({
       type: 'line',
       datasetId: datasetId,
@@ -71,7 +73,7 @@ function run(_rawData: any, myChart: any, title: string, Y: string) {
       trigger: 'axis'
     },
     xAxis: {
-      type: 'category',
+      type: 'value',
       nameLocation: 'middle',
       name: 'Excuted App Num',
       nameGap: 30,
