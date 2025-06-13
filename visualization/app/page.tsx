@@ -60,7 +60,7 @@ export default function Home() {
     const D: any[] = [["Excuted App Tasks Num", "PoF", "Method"]].concat(TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp)
     return D
   }, [TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp])
-  console.log(taskPofExperimentData)
+  
   const AppBeTest = isRandomData ? randomApp  : graphApp;
 
 

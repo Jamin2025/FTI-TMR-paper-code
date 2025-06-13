@@ -5,10 +5,10 @@ export const Turn = 50
 export const updateExperimentFrequency = 1
 export const InitialCoreState = [
     ['Broke', 'Idel', 'Idel', 'Idel', 'Idel'],
-    ['Idel', 'Idel', 'Idel', 'Idel', 'Idel'],
-    ['Broke', 'Broke', 'Broke', 'Broke', 'Idel'],
-    ['Broke', 'Broke', 'Broke', 'Idel', 'Idel'],
-    ['Broke', 'Broke', 'Idel', 'Idel', 'Idel'],
+    ['Broke', 'Idel', 'Idel', 'Idel', 'Idel'],
+    ['Broke', 'Idel', 'Idel', 'Idel', 'Idel'],
+    ['Broke', 'Idel', 'Idel', 'Idel', 'Idel'],
+    ['Broke', 'Idel', 'Idel', 'Idel', 'Idel'],
 ]
 
 

@@ -148,6 +148,7 @@ export async function TwoPhaseTMR(AppBeTest, isRandomData, setTPTMRexcutedNumsCo
             setExperimentStatesForTwoPhaseTMR([excutedAppNum, excutedTaskNums, excutedAppNum - failedAppNum, failedAppNum, Pof])
         }
     }
+    console.log(taskNums)
 }
 
 
