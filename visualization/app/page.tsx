@@ -8,7 +8,7 @@ import DataSelector from "./components/DataSelection";
 import { useEffect, useMemo, useState } from "react";
 import Task from "./alogrithms/Task";
 import { MergeSort } from "./alogrithms/util/mergeSort";
-import ExperimentCompare from './components/ExperimentCompare'
+import ExperimentComparion from './components/ExperimentComparion'
 
 const DataTypes = ["random", 'robot', 'fpppp', 'sparse']
 
@@ -108,7 +108,7 @@ export default function Home() {
         setTPTDTMRexcutedPofComp={setTPTDTMRexcutedPofComp}
       />
       <div className="border-t-2 border-gray-200 mt-10"></div>
-      <ExperimentCompare
+      <ExperimentComparion
         taskNumExperimentData={taskNumExperimentData}
         taskPofExperimentData={taskPofExperimentData}
       />

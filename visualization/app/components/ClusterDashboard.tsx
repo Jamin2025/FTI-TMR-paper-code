@@ -63,10 +63,10 @@ const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, s
       </DashboardContainer>
       <DashboardContainer>
             <h1 className="text-2xl font-bold mt-5 mb-5">Experiment Result</h1>
-            <ExperimentRow>Executed App Num: {experimentStates[0]}</ExperimentRow>
-            <ExperimentRow>Executed task: {experimentStates[1]}</ExperimentRow>
-            <ExperimentRow>Correct Executed result: {experimentStates[2]}</ExperimentRow>
-            <ExperimentRow>Faulty Executed result: {experimentStates[3]}</ExperimentRow>
+            <ExperimentRow>Apps Executed: {experimentStates[0]}</ExperimentRow>
+            <ExperimentRow>Tasks Executed: {experimentStates[1]}</ExperimentRow>
+            <ExperimentRow>Accurate Executions: {experimentStates[2]}</ExperimentRow>
+            <ExperimentRow>Faulty Executions: {experimentStates[3]}</ExperimentRow>
             <ExperimentRow>PoF: {experimentStates[4]}</ExperimentRow>
             <ExperimentRow>ST: {STs.map(item => item.toFixed(4)).join(" ")}</ExperimentRow>
             <ExperimentRow>Leader: {threeLeaderNode.map(a => a == -1 ? null : a + 1).join(", ")}</ExperimentRow>

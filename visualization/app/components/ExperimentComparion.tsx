@@ -91,7 +91,7 @@ function run(_rawData: any, myChart: any, title: string, Y: string) {
 }
 
 
-const ExperimentCompare = ({taskNumExperimentData, taskPofExperimentData}: {taskNumExperimentData?: any, taskPofExperimentData: any}) => {
+const ExperimentComparion = ({taskNumExperimentData, taskPofExperimentData}: {taskNumExperimentData?: any, taskPofExperimentData: any}) => {
     const chartsRef = useRef<HTMLDivElement>(null);
     const pofChartRef = useRef<HTMLDivElement>(null);
     const myChart = useRef<any>(null);
@@ -141,4 +141,4 @@ const ExperimentCompare = ({taskNumExperimentData, taskPofExperimentData}: {task
     )
 }
 
-export default ExperimentCompare
+export default ExperimentComparion
