@@ -1,7 +1,8 @@
 
+
 const { hitProbability } = require('./poisson.js')
 const MaxHeap = require ("./util/heap.js").default
-
+const {excuteDuration} = require("./config.js")
 function largerTaskOfDuration(a, b) {
     return a.duration > b.duration
 }
@@ -20,7 +21,6 @@ class Core {
 
     constructor(coreID, startExec, endExec) {
         this.id = coreID
-        let that = this
         this.startExec = startExec
         this.endExec = endExec
     }
@@ -48,7 +48,7 @@ class Core {
                 this.isCalculating = false
                 if (typeof this.endExec === "function") this.endExec(this.id, this.isPermentFault)
                 resolve(task.result)
-            })
+            }, excuteDuration=== "real" ? task.duration: excuteDuration)
             // task.duration * 
         })
     }

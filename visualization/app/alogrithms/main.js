@@ -3,10 +3,10 @@ const NodeReactiveTMR = require('./NodeReactiveTMR.js')
 const NodeTwoPhaseTMR = require('./NodeTwoPhaseTMR.js')
 const NodeTMR = require('./NodeTMR.js')
 const {coreNums, ClusterNumber, InitialCoreState, Turn, updateExperimentFrequency} = require('./config.js');
-const throttle = require('./util/throttle.js')
 // const { setLeaderForClusterTMR, setExperimentStateForClusterTMR } = require("../util")
 // const taskGraph = JSON.parse(require('./dataset/fpppp.json'))
-
+// todo 不同情况的实验
+// todo 全损坏机器，整体标红，检测逻辑挪入每个机器内部，一些坏机器的边界case需要完善
 
 
 
@@ -164,7 +164,7 @@ export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsCom
             if (InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
         }
     }
-    let taskNums = 0, excutedTaskNums = 0, failedNums = 0;
+    let taskNums = 0, excutedTaskNums = 0;
     const newExcutedNumsComp = [], newExcutedPofComp = [];
     let failedAppNum = 0, excutedAppNum = 0;
 
@@ -212,107 +212,41 @@ export async function ReactiveTMR(AppBeTest, isRandomData, setRTMRexcutedNumsCom
 
 
 
-async function isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, funAfterExecuteEachTask) {
-    let finalRes = null;
-    const arr = await Promise.all([checkCore1.calculate({...task}), checkCore2.calculate({...task})])
-    if (arr[0] !== arr[1]) {
-        const res3 = await checkCore0.calculate({...task})
-        if (res3 === arr[0] || res3 === arr[1]) finalRes = res3
-        else {
-            finalRes = -1
-        }
-        funAfterExecuteEachTask(0, 4, 0.5)
-    } else {
-        finalRes = arr[0]
-        funAfterExecuteEachTask(0, 4, 0.5)
-    }
+async function isPass(checkCore0, checkCore1, beTestedCore, task, funAfterExecuteEachTask) {
+    const arr = await Promise.all([checkCore1.calculate({...task}), checkCore0.calculate({...task})])
+    funAfterExecuteEachTask(0, 3)
     const beTestedRes = await beTestedCore.calculate({...task})
-    return beTestedRes === finalRes
+    return beTestedRes === arr[0] || beTestedRes === arr[1]
 }
 
-async function testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, selfCheckingCounter, funAfterExecuteEachTask) {
-    // 150–300ms
-    // const deactiveCores = []
-    for (let i = 0; i < 3; i++) {
-        for (let core = 0; core < coreNums; core++) {
-            const beTestedNode = Leaders[i]
-            const checkCore0 = beTestedNode.cores[leaderCores[i]]
-            // 指数回退
-            if (beTestedNode.brokeCoresCheckingCycle.has(core)) {
-                const [intialCycle, num] = beTestedNode.brokeCoresCheckingCycle.get(core)
-                if (intialCycle + 2 ** num > selfCheckingCounter) {
-                    continue;
-                }
-            }
-            if (beTestedNode.conflictTasks[core].size) {
-                for (let taskID of Leaders[i].conflictTasks[core]) {
-                    try {
-                        const task = AppBeTest[taskID]
-                        const a = (i + 1) % 3;
-                        const b = (i + 2) % 3;
-                        const beTestedCore = beTestedNode.cores[core]
-                        const checkCore1 = Leaders[a].cores[leaderCores[a]]
-                        const checkCore2 = Leaders[b].cores[leaderCores[b]]
-
-                        const passTest = async () => await isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, funAfterExecuteEachTask)
-                        if (await passTest() || await passTest()) {
-                            beTestedNode.conflictTasks[core].delete(taskID)
-
-                        } else {
-                            // deactiveCores.push([beTestedCore.NodeID, core])
-                            // i beTestedNodeIdx core beTestedCore
-                            if (!beTestedNode.brokenCores.has(core)) {
-                                beTestedNode.deactiveCore(core)
-                                beTestedNode.updateBrokenCoreCheckingCycle(core, [selfCheckingCounter, 0])
-                            } else {
-                                const [_, num] = beTestedNode.brokeCoresCheckingCycle.get(core)
-                                beTestedNode.updateBrokenCoreCheckingCycle(core, [selfCheckingCounter, num + 1])
-                            }
-                            if (leaderCores[i] === core) {
-                                leaderCores = updateLeaderCore()
-                            }
-                            break;
-                        }
-                    } catch (error) {
-                        console.error(error)
-                        console.error(AppBeTest, taskID)
-                    }
-                    // Leaders[checkCore1].cores[l]
-                }
-            }
-            if (beTestedNode.brokenCores.has(core) && beTestedNode.conflictTasks[core].size === 0) {
-                beTestedNode.activeCore(core)
-            }
-        }
-    }
-    // return deactiveCores
-}
-
-async function testNoLeaderNode(Leaders, eachNode, leaderCores, AppBeTest, selfCheckingCounter, funAfterExecuteEachTask) {
+async function testNoLeaderNode(Leaders, eachNode, contactCoreOfEachNode, AppBeTest, selfCheckingCounter, funAfterExecuteEachTask) {
     for (let i = 0; i < eachNode.length; i++) {
+        const beTestedNode = eachNode[i]
+        const brokenCoreRecord = []
         for (let core = 0; core < coreNums; core++) {
-            const beTestedNode = eachNode[i]
-            const checkCore0 = Leaders[0].cores[leaderCores[0]]
+            
+            const checkCore0 = Leaders[0].cores[contactCoreOfEachNode.get(Leaders[0].NodeID)]
+            beTestedNode.setContactCore(core)
             // 指数回退
             if (beTestedNode.brokeCoresCheckingCycle.has(core)) {
                 const [intialCycle, num] = beTestedNode.brokeCoresCheckingCycle.get(core)
-                if (intialCycle + 2 ** num > selfCheckingCounter) {
+                if (selfCheckingCounter < intialCycle + 2 ** num ) {
                     continue;
                 }
             }
             if (beTestedNode.conflictTasks[core].size) {
-                for (let taskID of eachNode[i].conflictTasks[core]) {
+                for (let taskID of beTestedNode.conflictTasks[core]) {
                     try {
                         const task = AppBeTest[taskID]
                         const beTestedCore = beTestedNode.cores[core]
-                        const checkCore1 = Leaders[1].cores[leaderCores[1]]
-                        const checkCore2 = Leaders[2].cores[leaderCores[2]]
-                        const passTest = async () => await isPass(checkCore0, checkCore1, checkCore2, beTestedCore, task, funAfterExecuteEachTask)
+                        const checkCore1 = Leaders[1].cores[contactCoreOfEachNode.get(Leaders[0].NodeID)]
+                        const passTest = async () => await isPass(checkCore0, checkCore1, beTestedCore, task, funAfterExecuteEachTask)
                         if (await passTest() || await passTest()) {
                             beTestedNode.conflictTasks[core].delete(taskID)
                         } else {
                             if (!beTestedNode.brokenCores.has(core)) {
-                                beTestedNode.deactiveCore(core)
+                                brokenCoreRecord.push(core)
+                                // beTestedNode.deactiveCore(core)
                                 beTestedNode.updateBrokenCoreCheckingCycle(core, [selfCheckingCounter, 0])
                             } else {
                                 const [_, num] = beTestedNode.brokeCoresCheckingCycle.get(core)
@@ -331,21 +265,62 @@ async function testNoLeaderNode(Leaders, eachNode, leaderCores, AppBeTest, selfC
                 beTestedNode.activeCore(core)
             }
         }
+        // there has functional core
+        if (brokenCoreRecord.length !== coreNums) {
+            for (let core of brokenCoreRecord) {
+                beTestedNode.deactiveCore(core)
+            }
+        // there is no functional core
+        } else {
+            beTestedNode.MachineBroken(true)
+        }
+        
     }
 }
-export async function hybirdFT_FD(setLeaderCore,
+
+function genContactCoresChange(NodeID, setContactCores) {
+    return (coreID) => {
+        setContactCores(prev =>  {
+            const newmap = new Map(prev)
+            newmap.set(NodeID, coreID)
+            return newmap
+        })
+    }
+}
+
+function genBrokenMachineChange(NodeID, setBrokenMachines) {
+    return (isBroken) => {
+        setBrokenMachines(prev =>  {
+            const newset = new Set(prev)
+            if (isBroken) newset.add(NodeID)
+            else newset.delete(NodeID)
+            return newset
+        })
+    }
+}
+
+export async function hybirdFT_FD(setContactCores,
     AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, setTPTDTMRexcutedPofComp,
     setExperimentStates, setCoresState,
     setCoresDisabled, setSTs,
-    setThreeLeaderNode
+    setTwoLeaderNode, setBrokenMachines
 ) {
 
     let checkCycle = 2 // 指数增长的checkCycle // 极限为100轮次
     const limit = 100
     const nodes = new Array(ClusterNumber).fill(null).map(
         (_, NodeID) => 
-            new NodeClusterTMR(NodeID, genCoreStartExecution(NodeID, setCoresState), genCoreEndExecution(NodeID, setCoresState), genCoreActiveStateChange(NodeID, setCoresDisabled), coreNums)
+            new NodeClusterTMR(
+                NodeID,
+                coreNums,
+                genCoreStartExecution(NodeID, setCoresState),
+                genCoreEndExecution(NodeID, setCoresState),
+                genCoreActiveStateChange(NodeID, setCoresDisabled),
+                genContactCoresChange(NodeID, setContactCores),
+                genBrokenMachineChange(NodeID, setBrokenMachines)
+            )
     )
+    Object.freeze(nodes)
     for (let i = 0; i < ClusterNumber; i++) {
         for (let j = 0; j < coreNums; j++) {
             if (InitialCoreState[i][j] === "Broke") nodes[i].brokeCore(j)
@@ -353,11 +328,10 @@ export async function hybirdFT_FD(setLeaderCore,
     }
     // 记录用于指数回退
     let selfCheckingCounter = 0;
-    let taskNums = 0, excutedTaskNums = 0, failedNums = 0;
+    let excutedTaskNums = 0;
     const newExcutedNumsComp = [], newExcutedPofComp = [];
     let failedAppNum = 0, excutedAppNum = 0;
-    function updateAfterEachTaskExecuted(taskNum, excutedNum) {
-        taskNums += taskNum
+    function updateAfterEachTaskExecuted(_, excutedNum) {
         excutedTaskNums += excutedNum
     }
 
@@ -394,45 +368,54 @@ export async function hybirdFT_FD(setLeaderCore,
             console.log("in self checking cycle")
             selfCheckingCounter++
             if (turn < limit) checkCycle *= 2
-            // election // todo去掉broken node
-            const Leaders = [...nodes].filter(node => node.hasAvaliableCore()).sort((a, b) => b.ST - a.ST).slice(0, 3)
-            setThreeLeaderNode(Leaders.map((node) => node.NodeID))
-            // 选取代表core
-            let leaderCores = Leaders.map((node) => node.getLeaderCore())
-            setLeaderCore({
-                [Leaders[0].NodeID]: leaderCores[0],
-                [Leaders[1].NodeID]: leaderCores[1],
-                [Leaders[2].NodeID]: leaderCores[2],
+            /* Start election  */
+            /* Step1 Each Node select a contact core of themself. additional tasks execute */
+          
+            const contactCoreOfEachNode = new Map(nodes.filter(node => node.hasAvaliableCore()).map(node => [node.NodeID,node.getContactCore()]));
+            /* Step2 Each contact core of respective node exchanges SS value; */
+            /* contact core which is broken return wrong SS value */
+          
+            const SSOfEachNode = nodes.map(node => [node.genSSByContactCore(), node.NodeID]);
+            Object.freeze(SSOfEachNode)
+            /* Step3 Each contact core launch the voting for two leader, primary and vice, broken core generate wrong vote; */
+         
+            
+            const votedNodes = await new Promise(resolve =>  {
+                let arr = [];
+                for (let node of nodes) {
+                    node.startVote(SSOfEachNode, nodes).then(res => {
+                        // console.log(res)
+                        const half = Math.floor(ClusterNumber / 2)
+                        if (arr.length <= half) {
+                            arr.push(res)
+                        }
+                        if (arr.length > half) {
+                            resolve(arr)
+                        }
+                    })
+                }
             })
-            function updateLeaderCore() {
-                // 更新leaderCore
-                // 若有leader没有可用的core，重新当次自检
-                if (Leaders.some(leader => !leader.hasAvaliableCore())) return leaderCores
-                leaderCores = Leaders.map((node) => node.getLeaderCore())
-                setLeaderCore({
-                    [Leaders[0].NodeID]: leaderCores[0],
-                    [Leaders[1].NodeID]: leaderCores[1],
-                    [Leaders[2].NodeID]: leaderCores[2],
-                })
-                return leaderCores
-            }
+            console.log('resolved: ', votedNodes)
+            const Leaders = votedNodes[0][0].map(idx =>  nodes[idx])
+            setTwoLeaderNode([...votedNodes[0][0]])
+            
             // election end
-            // Leader互检 0号leader由1号2号检查。1号leader由0，2号检查。2号leader由0，1号检查
-            await testLeadNode(Leaders, leaderCores, AppBeTest, updateLeaderCore, selfCheckingCounter, updateAfterEachTaskExecuted)
-
-            if (Leaders.every(leader => leader.hasAvaliableCore())) {
-                // leader 检查完毕，检查非leader
-                await testNoLeaderNode(Leaders, nodes.filter((node) => !Leaders.includes(node)), leaderCores, AppBeTest, selfCheckingCounter, updateAfterEachTaskExecuted)
-                // console.log("test end")
-                setLeaderCore({})
-                setThreeLeaderNode([-1, -1, -1])
-                toNextTurn = true
-            } else {
-                checkCycle /= 2
-                turn--
-                selfCheckingCounter--;
-                toNextTurn = false
-            }
+            // @Optional TODO 1, 由正常的core去关闭不正常的核心的使用，即最后关闭，2，检测等逻辑应写入node当中。3若找不到正常的core，则整个node变红。最后只和好core再联系一次
+            // verify no leader core whether broken?
+            await testNoLeaderNode(Leaders, nodes.filter((node) => !Leaders.includes(node)), contactCoreOfEachNode, AppBeTest, selfCheckingCounter, updateAfterEachTaskExecuted)
+            /** 模拟检错期间的任务消耗 start */ 
+            // voting
+            updateAfterEachTaskExecuted(0, 2 * (ClusterNumber ** 2 + 2 * ClusterNumber))
+            // heartBeat
+            updateAfterEachTaskExecuted(0, 2 * ClusterNumber)
+            // fault checking
+            updateAfterEachTaskExecuted(0, 2 * coreNums * ClusterNumber + 2 * ClusterNumber)
+            // notfication
+            updateAfterEachTaskExecuted(0, ClusterNumber) 
+            /** 模拟检错期间的任务消耗 end */
+            setContactCores(new Map())
+            setTwoLeaderNode([-1, -1])
+            toNextTurn = true
             // console.log(STs)
             // return
         }
@@ -443,7 +426,7 @@ export async function hybirdFT_FD(setLeaderCore,
             newExcutedNumsComp.push([excutedAppNum, excutedTaskNums, 'FDT-TMR'])
             setTPTDTMRexcutedNumsComp([...newExcutedNumsComp])
             setTPTDTMRexcutedPofComp([...newExcutedPofComp])
-            setSTs(nodes.map(node => node.ST))
+            setSTs(nodes.map(node => node.SS))
             setExperimentStates([excutedAppNum, excutedTaskNums, excutedAppNum - failedAppNum, failedAppNum, pof])
         }
     }

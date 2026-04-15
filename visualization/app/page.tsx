@@ -51,13 +51,13 @@ export default function Home() {
 
   const taskNumExperimentData = useMemo(() => {
     // const mergeSortedArrs = mergeSort.sortSortedArrs()
-    const D: any[] = [["Excuted App Num", "Excuted Tasks Num", "Method"]].concat(TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp)
+    const D: any[] = [["Number of Applications Executed", "Number of Tasks Executed", "Method"]].concat(TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp)
     return D
   }, [TMRexcutedNumsComp, TPTMRexcutedNumsComp, RTMRexcutedNumsComp, TPTDTMRDexcutedNumsComp])
 
   const taskPofExperimentData = useMemo(() => {
     // const mergeSortedArrs = mergeSort.sortSortedArrs(TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp)
-    const D: any[] = [["Excuted App Tasks Num", "PoF", "Method"]].concat(TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp)
+    const D: any[] = [["Number of Applications Executed", "PoF", "Method"]].concat(TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp)
     return D
   }, [TMRexcutedPofComp, TPTMRexcutedPofComp, RTMRexcutedPofComp, TPTDTMRDexcutedPofComp])
   

@@ -18,24 +18,17 @@ const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, s
     const [coresDisabled, setCoresDisabled] = useState(
       new Array(ClusterNumber).fill(null).map(() => new Array(coreNums).fill(false))
     )
-    const [threeLeaderNode, setThreeLeaderNode] = useState<number[]>([-1, -1, -1])
-    const [leaderCore, setLeaderCore] = useState<any>({})
-
-    // useEffect(() => {
-    //   insetCoreStateForClusterTMR(setCoresState)
-    //   insetExperimentStateForClusterTMR(setExperimentStates)
-    //   insetCoresDisabledForClusterTMR(setCoresDisabled)
-    //   insetSTForClusterTMR(setSTs)
-    //   insetLeaderForClusterTMR(setThreeLeaderNode)
-    // }, [])
-
+    const [twoLeaderNode, setTwoLeaderNode] = useState<number[]>([-1, -1])
+    const [contactCore, setContactCore] = useState<any>(new Map())
+    const [brokenMachines, setBrokenMachines] = useState<Set<number>>(new Set())
+    
     function startExperiment() {
       // 让统计数据最后出来。
-      hybirdFT_FD(setLeaderCore, AppBeTest, isRandomData, 
+      hybirdFT_FD(setContactCore, AppBeTest, isRandomData, 
         setTPTDTMRexcutedNumsComp, setTPTDTMRexcutedPofComp,
         setExperimentStates, setCoresState, 
         setCoresDisabled, setSTs, 
-        setThreeLeaderNode
+        setTwoLeaderNode, setBrokenMachines
       )
     }
 
@@ -47,15 +40,16 @@ const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, s
           <StatusInfoBar />
         </div>
         <ClusterGrid>
-          {Array(ClusterNumber).fill(null).map((_, nodeId: number) => (
+          {Array(ClusterNumber).fill(null).map((_, NodeID: number) => (
             <Machine
-              key={nodeId}
-              machineId={nodeId}
-              coreState={coresState[nodeId]}
-              coresDisabled={coresDisabled[nodeId]}
+              key={NodeID}
+              machineId={NodeID}
+              coreState={coresState[NodeID]}
+              coresDisabled={coresDisabled[NodeID]}
               coreNums={coreNums}
-              isLeader={threeLeaderNode.includes(nodeId)}
-              leaderCore={leaderCore}
+              isLeader={twoLeaderNode.includes(NodeID)}
+              contactCore={contactCore}
+              isBoroken={brokenMachines.has(NodeID)}
             />
           ))}
         </ClusterGrid>
@@ -68,8 +62,8 @@ const ClusterDashboard = ({AppBeTest, isRandomData, setTPTDTMRexcutedNumsComp, s
             <ExperimentRow>Accurate Executions: {experimentStates[2]}</ExperimentRow>
             <ExperimentRow>Faulty Executions: {experimentStates[3]}</ExperimentRow>
             <ExperimentRow>PoF: {experimentStates[4]}</ExperimentRow>
-            <ExperimentRow>ST: {STs.map(item => item.toFixed(4)).join(" ")}</ExperimentRow>
-            <ExperimentRow>Leader: {threeLeaderNode.map(a => a == -1 ? null : a + 1).join(", ")}</ExperimentRow>
+            <ExperimentRow>SS: {STs.map(item => item.toFixed(4)).join(" ")}</ExperimentRow>
+            <ExperimentRow>Leader: {twoLeaderNode.map(a => a == -1 ? null : a + 1).join(", ")}</ExperimentRow>
       </DashboardContainer>
       </div>
     );

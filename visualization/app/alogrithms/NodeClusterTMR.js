@@ -1,4 +1,8 @@
+const { ClusterNumber } = require('./config')
 const Node_ = require('./Node_')
+const Counter = require('./util/counter')
+const PrimaryVote = require('./PrimaryVote')
+const ViceVote = require('./ViceVote')
 
 class NodeClusterTMR extends Node_ {
 
@@ -10,7 +14,16 @@ class NodeClusterTMR extends Node_ {
 
     brokeCoresCheckingCycle = new Map()
 
-    constructor(NodeID, startExec, endExec, disableCore, coreNums) {
+    leaders = []
+
+    SS = 0
+
+    conflictCount = 0
+    executeTaskCount = 0
+    
+    contactCore = 0
+
+    constructor(NodeID, coreNums, startExec, endExec, disableCore, contactCoreChange, MachineBroken) {
         super(NodeID, startExec, endExec, coreNums)
         this.conflictTasks = new Array(coreNums).fill(0).map(() => new Set())
         this.activeCore = (coreID) => {
@@ -24,19 +37,75 @@ class NodeClusterTMR extends Node_ {
             this.cores[coreID].deactiveCore()
             disableCore(coreID, true)
         }
+        this.setContactCore = (coreID) => {
+            this.contactCore = coreID;
+            contactCoreChange(coreID)
+        }
+        this.MachineBroken = MachineBroken
+        this.termCt = new Counter();
+        const isContactCorePF = this.isContactCorePF.bind(this)
+        const getTerm = this.termCt.getCount.bind(this.termCt)
+        const getPrimaryLeader = () => this.leaders[0]
+        const setPrimaryLeader = (v) => this.leaders[0] = v
+        const getViceLeader = () => this.leaders[1]
+        const setViceLeader = (v) => this.leaders[1] = v
+        const getNodeID = () => this.NodeID
+        const getSS = () => this.SS
+        this.primaryVote = new PrimaryVote(
+            isContactCorePF,
+            getTerm,
+            getPrimaryLeader,
+            setPrimaryLeader,
+            getNodeID,
+            getSS
+        )
+        this.viceVote = new ViceVote(
+            isContactCorePF,
+            getTerm,
+            getPrimaryLeader,
+            getViceLeader,
+            setViceLeader,
+            getNodeID,
+            getSS
+        )
     }
 
-    ST = 0
+   
 
-    conflictCount = 0
-    executeTaskCount = 0
-
-    getLeaderCore() {
-        if (!this.hasAvaliableCore()) throw new Error("this leader doesn't have any avaliable core to be used")
-        const coresWithConflictCount = this.conflictTasks.map((set, core) => [set.size, core]).sort((a, b) => a[0] - b[0])
-        const filterBroken = coresWithConflictCount.filter((a) => !this.brokenCores.has(a[1]))
-        return filterBroken[0][1]
+    isContactCorePF() {
+        return this.cores[this.contactCore].isPermentFault
     }
+    /* 随机选一个leader core */
+    /* Randomly select a leader core */
+    getContactCore(avaliableBrokenCore) {
+        if (!avaliableBrokenCore && !this.hasAvaliableCore()) throw new Error("no more regular cores to used");
+        const avaliableCores = this.cores.filter(core => !this.brokenCores.has(core.id))
+        const random = Math.floor(Math.random() * avaliableCores.length);
+        this.setContactCore(avaliableCores[random].id)
+        return this.contactCore
+    }
+
+    /* if the leader core is broken return a random SS value, if not, return the true one */
+    genSSByContactCore() {
+        if (this.isContactCorePF()) {
+            return Math.random() * 1000;
+        } else {
+            return this.SS
+        }
+    }
+
+    startVote(SSOfEachNode, nodes) {
+        return new Promise((resolve) => {
+            if (this.isContactCorePF()) this.termCt.count = Math.random() * 100
+            else this.termCt.increase()
+            // First, select out a leader and determinate the leader group
+            this.primaryVote.vote(SSOfEachNode, nodes);
+            this.viceVote.setVoteResolve(resolve)
+        })
+    }
+
+
+    
 
     hasAvaliableCore() {
         return this.brokenCores.size !== this.coreNums
@@ -85,7 +154,7 @@ class NodeClusterTMR extends Node_ {
             // 记录争议任务, 以内核为单位
             this.executeTaskCount += 3
             this.conflictCount += 1
-            this.ST = 1 - this.conflictCount / this.executeTaskCount
+            this.SS = 1 - this.conflictCount / this.executeTaskCount
 
             if (this.brokenCores.size < 2) {
                 const excludeCore = new Set([...two_FreeCores, ...this.brokenCores])
@@ -93,8 +162,8 @@ class NodeClusterTMR extends Node_ {
                 // 重新计算一次
                 const c = await lastCallRes[0]
                 const fullcalCores = [...two_FreeCores, ...lastCore]
-                // console.log("Node Id: ", this.NodeID, " fullCalCores: ", fullcalCores)
                 const [finalRes, failedCores] = Node_.FT.TMR_with_fault_core(...result, c, fullcalCores)
+                // 让最后做决策的核心告知对方写入，若正常的核心收到错误的信息则不写入
                 if (Array.isArray(failedCores)) {
                     failedCores.forEach(core => this.conflictTasks[core].add(task.id))
                 } else {
@@ -122,10 +191,9 @@ class NodeClusterTMR extends Node_ {
         // 主阶段通过
         } else {
             this.executeTaskCount += 2
-            this.ST = 1 - this.conflictCount / this.executeTaskCount
+            this.SS = 1 - this.conflictCount / this.executeTaskCount
             const finalRes = result[0]
             if (typeof funAfterExecuteEachTask === "function") funAfterExecuteEachTask(1, 2, finalRes)
-        //    console.log("Node Id: ", this.NodeID, " fullCalCores: ", two_FreeCores)
             return finalRes
         }
     }

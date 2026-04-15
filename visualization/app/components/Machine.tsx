@@ -13,13 +13,14 @@ interface MachineProps {
   coreState?: string[],
   coresDisabled?: boolean[]
   isLeader?: boolean
-  leaderCore?: number[]
-  coreNums?: number
+  contactCore?: Map<number, number>
+  coreNums?: number,
+  isBoroken?: boolean
 }
 
-const Machine = ({ machineId, coreState, coresDisabled, isLeader, leaderCore, coreNums }: MachineProps) => {
+const Machine = ({ machineId, coreState, coresDisabled, isLeader, contactCore, coreNums, isBoroken }: MachineProps) => {
     return (
-      <MachineContainer bordercolor={isLeader ? '#87CEEB' : "#ddd"}>
+      <MachineContainer bordercolor={isBoroken ? '#E74C3C' : (isLeader ? '#87CEEB' : "#ddd")}>
         <h3>Node {machineId + 1}</h3>
         <CpuList>
           <TitleBox>Cores:</TitleBox>
@@ -29,7 +30,8 @@ const Machine = ({ machineId, coreState, coresDisabled, isLeader, leaderCore, co
                 key={coreID}
                 state={(coreState && coreState[coreID]) || getRandomCpuState()} 
                 disabled={coresDisabled && coresDisabled[coreID]}
-                bordercolor={isLeader && leaderCore && leaderCore[machineId] === coreID ? '#F7DC6F' : "transparent"}
+                iscontactcore={String(contactCore && contactCore.get(machineId) === coreID)}
+                // bordercolor={ ? '#F7DC6F' : "transparent"}
               />
             ))}
           </div>

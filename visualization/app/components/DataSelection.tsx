@@ -11,8 +11,8 @@ const DataSelector = ({selected, setSelected, taskLen, setTaskLen, graphApp, ran
 
   function handleTaskLen(e: ChangeEvent<HTMLInputElement>) {
     const v = e.target.value;
-    if (+v > 80) {
-      window.alert("can't above 80")
+    if (+v > 500) {
+      window.alert("can't above 500")
       return
     }
     setTaskLen(v)

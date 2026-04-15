@@ -75,14 +75,15 @@ function run(_rawData: any, myChart: any, title: string, Y: string) {
     xAxis: {
       type: 'value',
       nameLocation: 'middle',
-      name: 'Excuted App Num',
+      name: 'Number of Applications Executed',
       nameGap: 30,
     },
     yAxis: {
-      name: Y
+      name: Y,
     },
     grid: {
-      right: 140
+      // right: 140
+      left: 80,
     },
     series: seriesList
   };
@@ -124,7 +125,7 @@ const ExperimentComparion = ({taskNumExperimentData, taskPofExperimentData}: {ta
         // Specify the configuration items and data for the chart
 
         // Display the chart using the configuration items and data just specified.
-        run(taskNumExperimentData, myChart.current, "Excuted Task Num Comparison", "Excuted Tasks Num");
+        run(taskNumExperimentData, myChart.current, "Tasks Executed Comparison", "Number of Tasks Executed");
         run(taskPofExperimentData || [], pofChart.current, "PoF Comparison", "PoF")
         /**
          * experimentData [["Orginal Tasks Num", "Excuted Tasks Num", "Method"]]
@@ -135,8 +136,8 @@ const ExperimentComparion = ({taskNumExperimentData, taskPofExperimentData}: {ta
     
     return (
         <div className="flex justify-around items-center py-2">
-            <div id="1" style={{width: "600px", height: '400px'}} ref={chartsRef}></div>
-            <div id="2" style={{width: "600px", height: '400px'}} ref={pofChartRef}></div>
+            <div id="1" style={{width: "660px", height: '500px'}} ref={chartsRef}></div>
+            <div id="2" style={{width: "660px", height: '500px'}} ref={pofChartRef}></div>
         </div>
     )
 }

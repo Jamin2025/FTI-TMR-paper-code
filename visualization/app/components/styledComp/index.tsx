@@ -37,7 +37,7 @@ export const StorageList = styled.div`
 export interface StateProp {
     state?: string;
     disabled?: boolean;
-    bordercolor?: string
+    iscontactcore?: string;
 }
 
 export const StorageCore = styled.div<StateProp>`
@@ -76,15 +76,15 @@ export const CpuCore = styled.div<StateProp>`
   background-color: ${(props: StateProp) => {
     switch (props.state) {
       case "Idel":
-        return "#28a745";
+        return "#28a745;";
       case "Busy":
-        return "#ffcc00";
+        return "#ffcc00;";
       case "Broke":
-        return "#e74c3c";
+        return "#e74c3c;";
       default:
-        return "#28a745";
+        return "#28a745;";
     }
-  }};
+  }}
   ${(props: StateProp) => props.disabled && `&:before {
     content: "";
     position: absolute;
@@ -96,8 +96,18 @@ export const CpuCore = styled.div<StateProp>`
     background: black;
     transform: rotate(-45deg);
   }`}
-  ${(props: StateProp) => props.bordercolor && `
-    border: 1px solid ${props.bordercolor}
+  ${(props: StateProp) => props.iscontactcore ==='true' && `
+    &:after {
+      content: "C";
+      position: absolute;
+      top: -1.5em;
+      left: 50%;
+      margin-left: -4px;
+      font-size: 8px;
+      width:8px;
+      height:8px;
+      background: transparent;
+    }
     `}
 `;
 
