@@ -1,13 +1,32 @@
-# 容错paper实验
+# FTI-TMR Code Base
 
 
-## Docker
-可以多阶段构建，这样可以减少整体镜像的体积，代码什么的不会复制进去。
-例如开发阶段，生产阶段等等。
+## 如何跑起来 How to run?
+装上docker后
+
+After installed docker
 ```shell 
 docker build -t node-slim:20 .
 docker run -it -v $(pwd):/usr/src/app -p 3000:3000 --rm --name  FTPaper-project-env node-slim:20
 ```
+
+## 实验结果数据 The experiment data
+```shell
+# 在以下目录
+# Inside the following directory
+./results/**
+```
+你可以自己配置以下文件后自己尝试跑一下实验
+
+And also you can modify config file bellow to try a experiment youself
+
+
+```
+./visulaization/app/algorithms/config.js
+```
+
+## 实验开发过程
+
 ## TODO
 - [x] 测试单内核永久性错误api
 - [x] 实现R-TMR
@@ -15,14 +34,14 @@ docker run -it -v $(pwd):/usr/src/app -p 3000:3000 --rm --name  FTPaper-project-
     - [x] exponential backoff
     - [x] 调整任务计算逻辑，调整任务来自标准任务集
     - [x] 调整调度算法为list调度 longest task first
-- [ ] 比较R-TMR TMR TWOPHASE-TMR（30号）
+- [x] 比较R-TMR TMR TWOPHASE-TMR（30号）
     - [x] 任务执行数
     - [x] probability of failure
-- [ ] 统计数据
+- [x] 统计数据
     - [x] 每个算法五个机器跑
     - [x] pof
     - [x] excute task Nums
-- [ ] 写论文
+- [x] 写论文
 - [x] 可视化 next.js
 - [x] 可视化随机数据
 - [ ] 调整st值位置, L, T等位置
@@ -32,16 +51,7 @@ docker run -it -v $(pwd):/usr/src/app -p 3000:3000 --rm --name  FTPaper-project-
     - [x] 瞬时故障概率
     - [x] 增加执行周期长度
 
-思考：
 
-数据传输可能会出现问题，存储单元损坏会直接无法访问，给的数据错了，计算也是错的，多机比较没有意义。可以定期查数据传输问题。需要了解cpu数据传输具体流程
-这个为I/O流程，mmio内存地址当作register，polling轮询询问设备有无数据，中断，中断设备告知数据。
-DMA,CPU也参与。
-
-如果一个传感器传递数据给cpu的过程中出了错，这个多机怎么识别？那只关心计算错误。
-
-
-每个核心有一个单独的进程进行监听，测试该核心数据流转能力（周期跨度长）。测试该核心计算能力。 n
 
 
 ## 写论文时刻的TODO
@@ -58,13 +68,12 @@ DMA,CPU也参与。
 - [x] 摘要修改比较对象
 - [x] Core关闭的定义，对应用的调度分配权，坏core的调度会被拒绝。领导会通知好core进行调度。
 - [x] 大顶堆投票问题 SS + i
-- [ ] 投票过程中的任务数计算说明是否要加入进去。(修改实验，论文等返回再说，图标需要修改)
+- [x] 投票过程中的任务数计算说明是否要加入进去。(修改实验，论文等返回再说，图标需要修改)
 - [x] 翻译成英文.
 - [x] 机器节点名词混用,用节点
-- [ ] 重计算任务数，投票检查等阶段的额外消耗
-- [ ] 数据修改合并。并说明0.11 = 1/9
-- [x] 约辅导员聊聊投稿
-- [ ] 再查一下pdf图
+- [x] 重计算任务数，投票检查等阶段的额外消耗
+- [x] 数据修改合并。并说明0.11 = 1/9
+- [x] 再查一下pdf图
 - [x] 总结nv，np
 - [x] 添加参考文献，思考怎么添加比较合适（从上到下逐步添加？）
 - [x] 添加一些分布式理论方法的介绍。
