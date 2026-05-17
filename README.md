@@ -1,5 +1,7 @@
 # FTI-TMR Code Base
 
+## Paper
+https://arxiv.org/abs/2510.16896
 
 ## 如何跑起来 How to run?
 装上docker后
