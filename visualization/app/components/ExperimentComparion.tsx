@@ -1,6 +1,6 @@
 "use client"
 import {useRef, useEffect, useLayoutEffect} from "react"
-import {Graph} from "../alogrithms/util/graphType"
+import {Graph} from "../algorithms/util/graphType"
 import * as echarts from "echarts"
 function run(_rawData: any, myChart: any, title: string, Y: string) {
 

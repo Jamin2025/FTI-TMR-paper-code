@@ -144,9 +144,9 @@ class PrimaryVote {
            
             if (this.tryVtCt.getCount() === 3) {
                 this.tryVtCt.reset();
-                console.log('node', this.getNodeID(), 'failed at primary vote')
+                console.log('node', this.getNodeID() + 1, 'failed at primary vote')
             } else {
-                console.log('node', this.getNodeID(), 'try primary vote again')
+                console.log('node', this.getNodeID() + 1, 'try primary vote again')
                 this.vote(SSOfEachNode, nodes)
                 this.tryVtCt.increase()
             }

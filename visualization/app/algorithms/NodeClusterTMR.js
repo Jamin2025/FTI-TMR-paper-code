@@ -75,14 +75,19 @@ class NodeClusterTMR extends Node_ {
     isContactCorePF() {
         return this.cores[this.contactCore].isPermentFault
     }
-    /* 随机选一个leader core */
-    /* Randomly select a leader core */
-    getContactCore(avaliableBrokenCore) {
+    /* 随机选一个contact core */
+    /* Randomly select a contact core */
+    genContactCore(avaliableBrokenCore) {
         if (!avaliableBrokenCore && !this.hasAvaliableCore()) throw new Error("no more regular cores to used");
         const avaliableCores = this.cores.filter(core => !this.brokenCores.has(core.id))
         const random = Math.floor(Math.random() * avaliableCores.length);
         this.setContactCore(avaliableCores[random].id)
         return this.contactCore
+    }
+
+    getContactCore() {
+        if (typeof this.contactCore !== "number") throw new Error("there is no contact core")
+        return this.cores[this.contactCore];
     }
 
     /* if the leader core is broken return a random SS value, if not, return the true one */

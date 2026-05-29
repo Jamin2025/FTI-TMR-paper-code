@@ -3,9 +3,9 @@ import { DashboardContainer } from "./styledComp";
 import Machine  from "./Machine";
 import ExperimentResult from './ExperimentResult'
 import { useState } from "react";
-import { TMR } from "../alogrithms/main"
-// import LJFSchedule from "../alogrithms/listSchedule"
-import { InitialCoreState, ClusterNumber, coreNums} from "../alogrithms/config"
+import { TMR } from "../algorithms/main"
+// import LJFSchedule from "../algorithms/listSchedule"
+import { InitialCoreState, ClusterNumber, coreNums} from "../algorithms/config"
 
 const TMRDashboard = ({AppBeTest, isRandomData, setTMRExcutedNumsComp, setTMRExcutedPofComp}: any) => {
     

@@ -6,8 +6,8 @@ import StatusInfoBar from "./components/StatusInfoBar"
 import ReactiveTMRDashboard from "./components/ReactiveTMR";
 import DataSelector from "./components/DataSelection";
 import { useEffect, useMemo, useState } from "react";
-import Task from "./alogrithms/Task";
-import { MergeSort } from "./alogrithms/util/mergeSort";
+import Task from "./algorithms/Task";
+import { MergeSort } from "./algorithms/util/mergeSort";
 import ExperimentComparion from './components/ExperimentComparion'
 
 const DataTypes = ["random", 'robot', 'fpppp', 'sparse']
@@ -39,7 +39,7 @@ export default function Home() {
   }) : [], [taskLen, isRandomData])
 
   useEffect(() => {
-    !isRandomData && import(`./alogrithms/dataset/${selected}.json`).then((v) => {
+    !isRandomData && import(`./algorithms/dataset/${selected}.json`).then((v) => {
       setGraphApp(v.default.map((item: any) => {
         const task = new Task(item.id, item.duration);
         return {...task, ...item};

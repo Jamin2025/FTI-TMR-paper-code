@@ -5,7 +5,7 @@ FROM node:20-slim
 WORKDIR /usr/src/app/visualization
 
 # 复制源代码到容器中
-COPY . ../
+COPY ./ ../
 
 RUN npm config set registry https://registry.npmmirror.com && \
     npm install
@@ -13,4 +13,4 @@ RUN npm config set registry https://registry.npmmirror.com && \
 
 
 # 设置容器的默认命令
-CMD ["sh", "-c", "npm run dev"]
+CMD ["npm", "run", "dev"]

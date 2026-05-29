@@ -3,8 +3,8 @@ import { DashboardContainer } from "./styledComp";
 import Machine  from "./Machine";
 import ExperimentResult from './ExperimentResult'
 import { useState } from "react";
-import { TwoPhaseTMR } from "../alogrithms/main"
-import { InitialCoreState, ClusterNumber, coreNums} from "../alogrithms/config"
+import { TwoPhaseTMR } from "../algorithms/main"
+import { InitialCoreState, ClusterNumber, coreNums} from "../algorithms/config"
 
 const TwoPhaseTMRDashboard = ({AppBeTest, isRandomData, setTPTMRexcutedNumsComp, setTPTMRexcutedPofComp}: any) => {
     const [coresState, setCoresState] = useState(InitialCoreState)

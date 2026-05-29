@@ -1,11 +1,11 @@
 "use client";
 import { DashboardContainer, ClusterGrid } from "./styledComp";
-import { hybirdFT_FD } from "../alogrithms/main";
+import { hybirdFT_FD } from "../algorithms/main";
 import Machine from "./Machine";
 import { ExperimentRow } from "./ExperimentResult";
 import { useState } from "react";
 import StatusInfoBar from "./StatusInfoBar";
-import {InitialCoreState, ClusterNumber, coreNums} from "../alogrithms/config"
+import {InitialCoreState, ClusterNumber, coreNums} from "../algorithms/config"
 
 
 

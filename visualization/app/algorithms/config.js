@@ -1,7 +1,7 @@
 export const coreNums = 4
 
-// 每个任务执行多少轮次
-export const Turn = 100
+// 每个应用执行多少轮次
+export const Turn = 2
 
 export const updateExperimentFrequency = 20
 export const InitialCoreState = [
@@ -41,4 +41,4 @@ export const InitialCoreState = [
 export const ClusterNumber = 9;
 
 const durations = [0, "real", 50]
-export const excuteDuration = durations[0]
+export const excuteDuration = durations[1]

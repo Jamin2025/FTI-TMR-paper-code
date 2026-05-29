@@ -3,8 +3,8 @@ import { DashboardContainer } from "./styledComp";
 import Machine  from "./Machine";
 import ExperimentResult from './ExperimentResult'
 import { useState } from "react";
-import { ReactiveTMR } from "../alogrithms/main"
-import {coreNums, InitialCoreState, ClusterNumber} from "../alogrithms/config"
+import { ReactiveTMR } from "../algorithms/main"
+import {coreNums, InitialCoreState, ClusterNumber} from "../algorithms/config"
 
 const ReactiveTMRDashboard = ({AppBeTest, isRandomData, setRTMRexcutedNumsComp, setRTMRexcutedPofComp}: any) => {
     const [coresState, setCoresState] = useState(InitialCoreState)
