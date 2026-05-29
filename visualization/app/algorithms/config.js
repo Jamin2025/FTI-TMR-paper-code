@@ -1,7 +1,7 @@
 export const coreNums = 4
 
 // 每个应用执行多少轮次
-export const Turn = 2
+export const Turn = 100
 
 export const updateExperimentFrequency = 20
 export const InitialCoreState = [

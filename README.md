@@ -27,8 +27,10 @@ And also you can modify config file bellow to try a experiment youself
 ./visulaization/app/algorithms/config.js
 ```
 
-## 问题解答
+# 问题解答
+# ISSUES
 如果你在运行中遇到任何困难，请给我提issue。
+
 If you have any problem, please file an issue
 
 # The MIT License (MIT)
